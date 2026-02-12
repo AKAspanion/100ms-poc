@@ -4,18 +4,39 @@ import { useRouter } from 'vue-router'
 import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
+import Message from 'primevue/message'
+import { getMeetupAuthToken } from '../api/client'
 
 const router = useRouter()
 const meetupIdInput = ref('demo-meetup')
+const isJoining = ref(false)
+const joinErrorMessage = ref<string | null>(null)
 
-function handleJoinMeetup() {
+async function handleJoinMeetup() {
   const trimmed = meetupIdInput.value.trim()
+
+  joinErrorMessage.value = null
 
   if (!trimmed) {
     return
   }
 
-  router.push({ name: 'meetup', params: { meetupId: trimmed } })
+  isJoining.value = true
+
+  try {
+    // Verify the user is logged in and invited for this meetup.
+    // This also pre-generates a 100ms JWT token on the backend.
+    await getMeetupAuthToken(trimmed)
+
+    router.push({ name: 'meetup', params: { meetupId: trimmed } })
+  } catch (error) {
+    const message =
+      (error as Error).message ||
+      'Unable to join this meetup. Please check your invite and try again.'
+    joinErrorMessage.value = message
+  } finally {
+    isJoining.value = false
+  }
 }
 </script>
 
@@ -55,8 +76,17 @@ function handleJoinMeetup() {
             label="Join Meetup"
             icon="pi pi-video"
             class="w-full justify-center sm:w-auto"
+            :loading="isJoining"
           />
         </form>
+
+        <Message
+          v-if="joinErrorMessage"
+          severity="error"
+          class="mt-3 text-xs"
+        >
+          {{ joinErrorMessage }}
+        </Message>
 
         <p class="mt-4 text-xs text-slate-400">
           This POC uses mocked APIs when no backend URL is configured, so you can run it locally
