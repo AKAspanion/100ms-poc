@@ -1,5 +1,5 @@
 // Demo users with host and guest types
-export const MOCK_MEETUP_ID = 'demo-meetup'
+export const MOCK_MEETUP_ID = 'demo-meetup';
 
 const users = new Map([
   [
@@ -63,6 +63,6 @@ const users = new Map([
       },
     },
   ],
-])
+]);
 
-export { users }
+export { users };

@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import type { Photo } from '../api/types'
-import Card from 'primevue/card'
-import Image from 'primevue/image'
-import Button from 'primevue/button'
+  import type { Photo } from '../api/types';
+  import Card from 'primevue/card';
+  import Image from 'primevue/image';
+  import Button from 'primevue/button';
 
-const props = defineProps<{
-  photos: Photo[]
-  currentIndex: number
-}>()
+  const props = defineProps<{
+    photos: Photo[];
+    currentIndex: number;
+  }>();
 
-const emit = defineEmits<{
-  (event: 'photoSelected', index: number): void
-}>()
+  const emit = defineEmits<{
+    (event: 'photoSelected', index: number): void;
+  }>();
 
-function handleThumbnailClick(index: number) {
-  emit('photoSelected', index)
-}
+  function handleThumbnailClick(index: number) {
+    emit('photoSelected', index);
+  }
 </script>
 
 <template>
@@ -23,18 +23,13 @@ function handleThumbnailClick(index: number) {
     <template #title>
       <div class="flex items-baseline justify-between gap-3">
         <div>
-          <h2 class="text-sm font-semibold sm:text-base">
-            Shared photo album
-          </h2>
+          <h2 class="text-sm font-semibold sm:text-base">Shared photo album</h2>
           <p class="text-xs text-slate-400 sm:text-[13px]">
             Everyone in the meetup stays in sync as photos change.
           </p>
         </div>
 
-        <p
-          v-if="photos.length"
-          class="text-xs text-slate-400"
-        >
+        <p v-if="photos.length" class="text-xs text-slate-400">
           Photo
           <span class="font-medium text-slate-50">
             {{ currentIndex + 1 }}
@@ -55,10 +50,7 @@ function handleThumbnailClick(index: number) {
         No photos available for this meetup yet.
       </div>
 
-      <div
-        v-else
-        class="space-y-4"
-      >
+      <div v-else class="space-y-4">
         <div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-950/70">
           <Image
             :src="photos[currentIndex]?.url"
@@ -66,7 +58,9 @@ function handleThumbnailClick(index: number) {
             image-class="h-64 w-full object-cover sm:h-80"
             preview
           />
-          <div class="flex items-center justify-between border-t border-slate-800 bg-slate-950/80 px-3 py-2">
+          <div
+            class="flex items-center justify-between border-t border-slate-800 bg-slate-950/80 px-3 py-2"
+          >
             <div>
               <p class="text-xs font-medium text-slate-100 sm:text-sm">
                 {{ photos[currentIndex]?.title || 'Untitled photo' }}
@@ -104,4 +98,3 @@ function handleThumbnailClick(index: number) {
     </template>
   </Card>
 </template>
-

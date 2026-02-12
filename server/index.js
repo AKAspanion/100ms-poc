@@ -1,10 +1,10 @@
-import express from 'express'
-import cors from 'cors'
-import dotenv from 'dotenv'
-import jwt from 'jsonwebtoken'
-import path from 'path'
-import { fileURLToPath } from 'url'
-import { v4 as uuidv4 } from 'uuid'
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { v4 as uuidv4 } from 'uuid';
 import {
   appendPhotoEventRecord,
   createSessionRecord,
@@ -13,36 +13,35 @@ import {
   getPhotoEventsForSession,
   getSessionById,
   upsertMeetup,
-} from './lib/jsonDb.js'
-import { users, MOCK_MEETUP_ID } from './mock/users.js'
-import { getPhotosForAlbum, MOCK_ALBUM_ID } from './mock/photos.js'
+} from './lib/jsonDb.js';
+import { users, MOCK_MEETUP_ID } from './mock/users.js';
+import { getPhotosForAlbum, MOCK_ALBUM_ID } from './mock/photos.js';
 
 // Resolve __dirname in ESM so we can load server/.env
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load root .env (if present) and then server/.env (overrides)
-dotenv.config()
-dotenv.config({ path: path.join(__dirname, '.env'), override: true })
+dotenv.config();
+dotenv.config({ path: path.join(__dirname, '.env'), override: true });
 
-const app = express()
-const PORT = process.env.PORT || 4000
-const HMS_API_BASE_URL = process.env.HMS_API_BASE_URL || 'https://api.100ms.live'
-const HMS_TEMPLATE_ID = process.env.HMS_TEMPLATE_ID
-const HMS_MANAGEMENT_TOKEN = process.env.HMS_MANAGEMENT_TOKEN
-const HMS_ROOM_ID = process.env.HMS_ROOM_ID
+const app = express();
+const PORT = process.env.PORT || 4000;
+const HMS_API_BASE_URL = process.env.HMS_API_BASE_URL || 'https://api.100ms.live';
+const HMS_TEMPLATE_ID = process.env.HMS_TEMPLATE_ID;
+const HMS_MANAGEMENT_TOKEN = process.env.HMS_MANAGEMENT_TOKEN;
+const HMS_ROOM_ID = process.env.HMS_ROOM_ID;
 
-app.use(cors())
-app.use(express.json())
-
+app.use(cors());
+app.use(express.json());
 
 // Simple request logger
 app.use((req, res, next) => {
-  const start = Date.now()
-  const { method, originalUrl } = req
+  const start = Date.now();
+  const { method, originalUrl } = req;
 
   res.on('finish', () => {
-    const duration = Date.now() - start
+    const duration = Date.now() - start;
     // eslint-disable-next-line no-console
     console.log(
       JSON.stringify({
@@ -53,23 +52,23 @@ app.use((req, res, next) => {
         status: res.statusCode,
         durationMs: duration,
       }),
-    )
-  })
+    );
+  });
 
-  next()
-})
+  next();
+});
 
 // ---------------------------------------------------------------------------
 // In-memory demo data – replace with real persistence later.
 // ---------------------------------------------------------------------------
 
 function getOrCreateMeetup(meetupId) {
-  const existing = getMeetupById(meetupId)
+  const existing = getMeetupById(meetupId);
   if (existing) {
-    return existing
+    return existing;
   }
 
-  const id = meetupId || MOCK_MEETUP_ID
+  const id = meetupId || MOCK_MEETUP_ID;
   const meetup = {
     id,
     title: 'Memories with Nanny',
@@ -79,21 +78,21 @@ function getOrCreateMeetup(meetupId) {
     durationSeconds: 47 * 60,
     photoCount: 12,
     videoRoomId: process.env.HMS_ROOM_ID || null,
-  }
+  };
 
-  upsertMeetup(meetup)
-  return meetup
+  upsertMeetup(meetup);
+  return meetup;
 }
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 function generate100msToken(userId, roomId, role) {
-  const accessKey = process.env.HMS_ACCESS_KEY
-  const appSecret = process.env.HMS_APP_SECRET
+  const accessKey = process.env.HMS_ACCESS_KEY;
+  const appSecret = process.env.HMS_APP_SECRET;
 
   if (!accessKey || !appSecret) {
-    throw new Error('Missing HMS_ACCESS_KEY or HMS_APP_SECRET – cannot generate 100ms token')
+    throw new Error('Missing HMS_ACCESS_KEY or HMS_APP_SECRET – cannot generate 100ms token');
   }
 
   const payload = {
@@ -105,13 +104,13 @@ function generate100msToken(userId, roomId, role) {
     version: 2,
     iat: Math.floor(Date.now() / 1000),
     nbf: Math.floor(Date.now() / 1000),
-  }
+  };
 
   return jwt.sign(payload, appSecret, {
     algorithm: 'HS256',
     expiresIn: '24h',
     jwtid: uuidv4(),
-  })
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -121,17 +120,17 @@ function generate100msToken(userId, roomId, role) {
 async function ensureHmsRoomForMeetup(meetup) {
   // If a room is already associated, just reuse it.
   if (meetup.videoRoomId) {
-    return meetup.videoRoomId
+    return meetup.videoRoomId;
   }
 
   // If management configuration is missing, fail fast instead of using a fake room ID.
   if (!HMS_TEMPLATE_ID || !HMS_MANAGEMENT_TOKEN) {
     throw new Error(
-      'Missing HMS_TEMPLATE_ID or HMS_MANAGEMENT_TOKEN – cannot ensure 100ms room for meetup',
-    )
+      'Missing HMS_TEMPLATE_ID or HMS_MANAGEMENT_TOKEN - cannot ensure 100ms room for meetup',
+    );
   }
 
-  const url = `${HMS_API_BASE_URL}/v2/rooms`
+  const url = `${HMS_API_BASE_URL}/v2/rooms`;
 
   const body = {
     name: `meetup-${meetup.id}`,
@@ -139,7 +138,7 @@ async function ensureHmsRoomForMeetup(meetup) {
     recording_info: {
       enabled: true,
     },
-  }
+  };
 
   const response = await fetch(url, {
     method: 'POST',
@@ -148,10 +147,10 @@ async function ensureHmsRoomForMeetup(meetup) {
       Authorization: `Bearer ${HMS_MANAGEMENT_TOKEN}`,
     },
     body: JSON.stringify(body),
-  })
+  });
 
   if (!response.ok) {
-    const errorText = await response.text().catch(() => '')
+    const errorText = await response.text().catch(() => '');
     // eslint-disable-next-line no-console
     console.error(
       JSON.stringify({
@@ -161,21 +160,21 @@ async function ensureHmsRoomForMeetup(meetup) {
         status: response.status,
         body: errorText,
       }),
-    )
-    throw new Error('Failed to create 100ms room')
+    );
+    throw new Error('Failed to create 100ms room');
   }
 
-  const data = await response.json()
+  const data = await response.json();
 
   // 100ms returns "id" as the room identifier.
-  const roomId = data.id || data.room_id
+  const roomId = data.id || data.room_id;
 
   if (!roomId) {
-    throw new Error('100ms room response did not include an id')
+    throw new Error('100ms room response did not include an id');
   }
 
-  meetup.videoRoomId = roomId
-  return roomId
+  meetup.videoRoomId = roomId;
+  return roomId;
 }
 
 // ---------------------------------------------------------------------------
@@ -184,72 +183,72 @@ async function ensureHmsRoomForMeetup(meetup) {
 
 function getCurrentUser(req) {
   // Get userId from query parameter
-  const userId = req.query.userId || req.query.user_id
+  const userId = req.query.userId || req.query.user_id;
   if (!userId) {
-    return null
+    return null;
   }
-  return users.get(userId) || null
+  return users.get(userId) || null;
 }
 
 function getUserRoleForMeetup(user, meetupId) {
   if (!user || !user.rolesByMeetup) {
-    return null
+    return null;
   }
-  return user.rolesByMeetup[meetupId] || null
+  return user.rolesByMeetup[meetupId] || null;
 }
 
 // ---------------------------------------------------------------------------
 
 app.get('/meetups/:id', (req, res) => {
-  const meetupId = req.params.id
-  const meetup = getOrCreateMeetup(meetupId)
-  res.json(meetup)
-})
+  const meetupId = req.params.id;
+  const meetup = getOrCreateMeetup(meetupId);
+  res.json(meetup);
+});
 
 // Meetup scheduling – create a 100ms room using a template
 app.post('/meetups/:id/schedule', async (req, res) => {
-  const meetupId = req.params.id
-  const meetup = getOrCreateMeetup(meetupId)
+  const meetupId = req.params.id;
+  const meetup = getOrCreateMeetup(meetupId);
 
   try {
-    const videoRoomId = await ensureHmsRoomForMeetup(meetup)
+    const videoRoomId = await ensureHmsRoomForMeetup(meetup);
 
     res.json({
       meetup_id: meetup.id,
       video_room_id: videoRoomId,
-    })
+    });
   } catch (error) {
     res.status(500).json({
       error: (error && error.message) || 'Failed to schedule meetup and create room',
-    })
+    });
   }
-})
+});
 
 // Auth token – verify user & invite, then generate 100ms access token
 app.get('/meetups/:id/auth-token', async (req, res) => {
-  const meetupId = req.params.id
-  getOrCreateMeetup(meetupId)
+  const meetupId = req.params.id;
+  getOrCreateMeetup(meetupId);
 
-  const user = getCurrentUser(req)
+  const user = getCurrentUser(req);
   if (!user) {
-    return res.status(401).json({ error: 'User not authenticated. Please provide userId query parameter.' })
+    return res
+      .status(401)
+      .json({ error: 'User not authenticated. Please provide userId query parameter.' });
   }
 
-  const role = getUserRoleForMeetup(user, meetupId)
+  const role = getUserRoleForMeetup(user, meetupId);
 
   if (!role) {
     // User is logged in but not invited / assigned a role for this meetup.
-    return res.status(403).json({ error: 'User is not invited to this meetup' })
+    return res.status(403).json({ error: 'User is not invited to this meetup' });
   }
 
   if (!HMS_ROOM_ID) {
-    return res
-      .status(500)
-      .json({ error: 'HMS_ROOM_ID is not configured on the server' })
+    return res.status(500).json({ error: 'HMS_ROOM_ID is not configured on the server' });
   }
 
   try {
-    const token = generate100msToken(user.id, HMS_ROOM_ID, role)
+    const token = generate100msToken(user.id, HMS_ROOM_ID, role);
 
     res.json({
       token,
@@ -257,47 +256,47 @@ app.get('/meetups/:id/auth-token', async (req, res) => {
       userId: user.id,
       userType: user.type,
       role,
-    })
+    });
   } catch (error) {
     return res
       .status(500)
-      .json({ error: (error && error.message) || 'Failed to generate 100ms token' })
+      .json({ error: (error && error.message) || 'Failed to generate 100ms token' });
   }
-})
+});
 
 app.get('/albums/:id/photos', (req, res) => {
-  const albumId = req.params.id || MOCK_ALBUM_ID
-  res.json(getPhotosForAlbum(albumId))
-})
+  const albumId = req.params.id || MOCK_ALBUM_ID;
+  res.json(getPhotosForAlbum(albumId));
+});
 
 app.post('/meetups/:id/session', (req, res) => {
-  const meetupId = req.params.id
-  const sessionId = uuidv4()
-  const recordingStartTimestampMs = Date.now()
+  const meetupId = req.params.id;
+  const sessionId = uuidv4();
+  const recordingStartTimestampMs = Date.now();
 
   const session = {
     meetupId,
     sessionId,
     recordingStartTimestampMs,
-  }
+  };
 
-  createSessionRecord(session)
+  createSessionRecord(session);
 
   res.json({
     sessionId,
     recordingStartTimestampMs,
-  })
-})
+  });
+});
 
 app.post('/meetups/:id/photo-events', (req, res) => {
-  const meetupId = req.params.id
-  const { session_id, photo_id, photo_index, timestamp_ms, navigator_user_id } = req.body
+  const meetupId = req.params.id;
+  const { session_id, photo_id, photo_index, timestamp_ms, navigator_user_id } = req.body;
 
-  const sessionId = session_id
+  const sessionId = session_id;
 
-  const session = sessionId ? getSessionById(sessionId) : null
+  const session = sessionId ? getSessionById(sessionId) : null;
   if (!session) {
-    return res.status(400).json({ error: 'Unknown session_id' })
+    return res.status(400).json({ error: 'Unknown session_id' });
   }
 
   const event = {
@@ -308,9 +307,9 @@ app.post('/meetups/:id/photo-events', (req, res) => {
     timestampMs: timestamp_ms,
     navigatorUserId: navigator_user_id,
     receivedAt: Date.now(),
-  }
+  };
 
-  appendPhotoEventRecord(sessionId, event)
+  appendPhotoEventRecord(sessionId, event);
 
   // eslint-disable-next-line no-console
   console.log(
@@ -320,36 +319,36 @@ app.post('/meetups/:id/photo-events', (req, res) => {
       type: 'photo-event',
       event,
     }),
-  )
+  );
 
-  res.status(204).end()
-})
+  res.status(204).end();
+});
 
 app.get('/meetups/:id/session/current', (req, res) => {
-  const meetupId = req.params.id
+  const meetupId = req.params.id;
 
   // Find the most recent session for this meetup.
   const [latestSession] = getAllSessions()
     .filter((session) => session.meetupId === meetupId)
-    .sort((a, b) => b.recordingStartTimestampMs - a.recordingStartTimestampMs)
+    .sort((a, b) => b.recordingStartTimestampMs - a.recordingStartTimestampMs);
 
   if (!latestSession) {
-    return res.status(404).json({ error: 'No active session' })
+    return res.status(404).json({ error: 'No active session' });
   }
 
-  const events = getPhotoEventsForSession(latestSession.sessionId) || []
+  const events = getPhotoEventsForSession(latestSession.sessionId) || [];
 
   if (!events.length) {
-    return res.json({ currentPhotoIndex: 0 })
+    return res.json({ currentPhotoIndex: 0 });
   }
 
-  const lastEvent = events[events.length - 1]
-  res.json({ currentPhotoIndex: lastEvent.photoIndex ?? 0 })
-})
+  const lastEvent = events[events.length - 1];
+  res.json({ currentPhotoIndex: lastEvent.photoIndex ?? 0 });
+});
 
 app.get('/meetups/:id/summary', (req, res) => {
-  const meetupId = req.params.id
-  const meetup = getOrCreateMeetup(meetupId)
+  const meetupId = req.params.id;
+  const meetup = getOrCreateMeetup(meetupId);
 
   res.json({
     meetup_id: meetup.id,
@@ -371,12 +370,12 @@ app.get('/meetups/:id/summary', (req, res) => {
         'Bill to ask Aunt Mary for the crab cake recipe.',
       ],
     },
-  })
-})
+  });
+});
 
 app.get('/photos/:id/meetup-clips', (req, res) => {
-  const photoId = req.params.id
-  const meetup = getOrCreateMeetup(MOCK_MEETUP_ID)
+  const photoId = req.params.id;
+  const meetup = getOrCreateMeetup(MOCK_MEETUP_ID);
 
   res.json({
     photo_id: photoId,
@@ -395,7 +394,7 @@ app.get('/photos/:id/meetup-clips', (req, res) => {
             },
             {
               speaker: 'Dena',
-              text: "That’s right! And Mom made her famous crab cakes. Remember how Uncle Joe ate like six of them?",
+              text: 'That’s right! And Mom made her famous crab cakes. Remember how Uncle Joe ate like six of them?',
             },
           ],
         },
@@ -403,12 +402,12 @@ app.get('/photos/:id/meetup-clips', (req, res) => {
         recorded_at: meetup.recordedAt,
       },
     ],
-  })
-})
+  });
+});
 
 app.get('/', (_req, res) => {
-  res.json({ status: 'ok', message: 'Memrico Meetups demo API' })
-})
+  res.json({ status: 'ok', message: 'Memrico Meetups demo API' });
+});
 
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console
@@ -419,6 +418,5 @@ app.listen(PORT, () => {
       msg: `Memrico demo API listening on http://localhost:${PORT}`,
       port: PORT,
     }),
-  )
-})
-
+  );
+});

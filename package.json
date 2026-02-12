@@ -8,7 +8,11 @@
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "server": "node server/index.js",
-    "server:dev": "nodemon --watch server --ext js,json --exec node server/index.js"
+    "server:dev": "nodemon --watch server --ext js,json --exec node server/index.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@100mslive/hms-video-store": "^0.13.2",
@@ -28,10 +32,16 @@
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^24.10.1",
     "@vitejs/plugin-vue": "^6.0.2",
+    "@eslint/js": "^9.18.0",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-vue": "^9.32.0",
     "@vue/tsconfig": "^0.8.1",
     "nodemon": "^3.1.9",
     "postcss": "^8.5.6",
+    "prettier": "^3.4.2",
     "tailwindcss": "^4.1.18",
+    "typescript-eslint": "^8.19.1",
     "typescript": "~5.9.3",
     "vite": "^7.3.1",
     "vue-tsc": "^3.1.5"

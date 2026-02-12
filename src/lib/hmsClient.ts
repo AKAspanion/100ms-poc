@@ -3,84 +3,84 @@ import {
   selectIsLocalVideoPluginPresent,
   selectLocalVideoTrackID,
   selectLocalPeer,
-} from '@100mslive/hms-video-store'
-import { HMSVBPlugin, HMSVirtualBackgroundTypes } from '@100mslive/hms-virtual-background'
+} from '@100mslive/hms-video-store';
+import { HMSVBPlugin, HMSVirtualBackgroundTypes } from '@100mslive/hms-virtual-background';
 
 // 100ms client-side helpers wired to HMSReactiveStore.
-let hmsStoreInstance: HMSReactiveStore | null = null
-let hmsStore: ReturnType<HMSReactiveStore['getStore']> | null = null
-let hmsActions: ReturnType<HMSReactiveStore['getActions']> | null = null
-let hmsNotifications: ReturnType<HMSReactiveStore['getNotifications']> | null = null
-let virtualBackgroundPlugin: HMSVBPlugin | null = null
+let hmsStoreInstance: HMSReactiveStore | null = null;
+let hmsStore: ReturnType<HMSReactiveStore['getStore']> | null = null;
+let hmsActions: ReturnType<HMSReactiveStore['getActions']> | null = null;
+let hmsNotifications: ReturnType<HMSReactiveStore['getNotifications']> | null = null;
+let virtualBackgroundPlugin: HMSVBPlugin | null = null;
 
 function ensureHms() {
   if (!hmsStoreInstance) {
-    hmsStoreInstance = new HMSReactiveStore()
-    hmsStoreInstance.triggerOnSubscribe()
-    hmsStore = hmsStoreInstance.getStore()
-    hmsActions = hmsStoreInstance.getActions()
-    hmsNotifications = hmsStoreInstance.getNotifications()
+    hmsStoreInstance = new HMSReactiveStore();
+    hmsStoreInstance.triggerOnSubscribe();
+    hmsStore = hmsStoreInstance.getStore();
+    hmsActions = hmsStoreInstance.getActions();
+    hmsNotifications = hmsStoreInstance.getNotifications();
   }
 
-  return hmsStoreInstance
+  return hmsStoreInstance;
 }
 
 export interface PhotoSyncMessage {
-  type: 'navigate_photo'
-  photoId: string
-  photoIndex: number
-  navigatorId: string
-  timestamp: number
+  type: 'navigate_photo';
+  photoId: string;
+  photoIndex: number;
+  navigatorId: string;
+  timestamp: number;
 }
 
 export async function applyVirtualBackground(options: {
-  mode?: 'none' | 'blur' | 'image'
-  imageUrl?: string
+  mode?: 'none' | 'blur' | 'image';
+  imageUrl?: string;
 }): Promise<void> {
   if (!hmsActions || !hmsStore) {
-    return
+    return;
   }
 
-  const mode = options.mode ?? 'none'
+  const mode = options.mode ?? 'none';
 
   if (mode === 'none') {
     if (!virtualBackgroundPlugin) {
-      return
+      return;
     }
 
     try {
       const isVirtualBackgroundEnabled = hmsStore.getState(
         selectIsLocalVideoPluginPresent(virtualBackgroundPlugin.getName()),
-      )
+      );
 
       if (isVirtualBackgroundEnabled) {
-        await hmsActions.removePluginFromVideoTrack(virtualBackgroundPlugin)
+        await hmsActions.removePluginFromVideoTrack(virtualBackgroundPlugin);
       }
 
       await virtualBackgroundPlugin.setBackground(
         HMSVirtualBackgroundTypes.NONE,
         HMSVirtualBackgroundTypes.NONE,
-      )
+      );
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('[100ms] remove virtual background failed', error)
+      console.error('[100ms] remove virtual background failed', error);
     }
 
-    return
+    return;
   }
 
   if (!virtualBackgroundPlugin) {
     virtualBackgroundPlugin = new HMSVBPlugin(
       HMSVirtualBackgroundTypes.NONE,
       HMSVirtualBackgroundTypes.NONE,
-    )
+    );
   }
 
-  const support = virtualBackgroundPlugin.checkSupport()
+  const support = virtualBackgroundPlugin.checkSupport();
   if (!support || (support as any).errMsg) {
     // eslint-disable-next-line no-console
-    console.warn('[100ms] virtual background not supported:', (support as any)?.errMsg)
-    return
+    console.warn('[100ms] virtual background not supported:', (support as any)?.errMsg);
+    return;
   }
 
   try {
@@ -88,121 +88,121 @@ export async function applyVirtualBackground(options: {
       await virtualBackgroundPlugin.setBackground(
         HMSVirtualBackgroundTypes.BLUR,
         HMSVirtualBackgroundTypes.BLUR,
-      )
+      );
     } else if (mode === 'image' && options.imageUrl) {
-      const image = document.createElement('img')
-      const isAbsoluteUrl = /^https?:\/\//i.test(options.imageUrl)
+      const image = document.createElement('img');
+      const isAbsoluteUrl = /^https?:\/\//i.test(options.imageUrl);
 
       // Only set crossOrigin for external URLs; same-origin public assets
       // (e.g. `/living-room.jpeg`) don't need it and some dev servers will
       // fail CORS if this is set.
       if (isAbsoluteUrl) {
-        image.crossOrigin = 'anonymous'
+        image.crossOrigin = 'anonymous';
       }
 
-      image.src = options.imageUrl
-      await image.decode()
-      await virtualBackgroundPlugin.setBackground(image, HMSVirtualBackgroundTypes.IMAGE)
+      image.src = options.imageUrl;
+      await image.decode();
+      await virtualBackgroundPlugin.setBackground(image, HMSVirtualBackgroundTypes.IMAGE);
     }
 
     const isVirtualBackgroundEnabled = hmsStore.getState(
       selectIsLocalVideoPluginPresent(virtualBackgroundPlugin.getName()),
-    )
+    );
 
     if (!isVirtualBackgroundEnabled) {
       // Recommended value from 100ms docs.
-      const pluginFrameRate = 15
-      await hmsActions.addPluginToVideoTrack(virtualBackgroundPlugin, pluginFrameRate)
+      const pluginFrameRate = 15;
+      await hmsActions.addPluginToVideoTrack(virtualBackgroundPlugin, pluginFrameRate);
     }
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('[100ms] virtual background failure', error)
+    console.error('[100ms] virtual background failure', error);
   }
 }
 
 export async function joinMeetupRoom(params: {
-  authToken: string
-  userName: string
-  virtualBackgroundMode?: 'none' | 'blur' | 'image'
-  virtualBackgroundImageUrl?: string
+  authToken: string;
+  userName: string;
+  virtualBackgroundMode?: 'none' | 'blur' | 'image';
+  virtualBackgroundImageUrl?: string;
 }): Promise<void> {
-  const instance = ensureHms()
+  const instance = ensureHms();
   if (!instance || !hmsActions) {
-    return
+    return;
   }
 
   try {
     await hmsActions.join({
       authToken: params.authToken,
       userName: params.userName,
-    })
+    });
 
     await applyVirtualBackground({
       mode: params.virtualBackgroundMode,
       imageUrl: params.virtualBackgroundImageUrl,
-    })
+    });
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('[100ms] join failed', error)
+    console.error('[100ms] join failed', error);
   }
 }
 
 export async function leaveMeetupRoom(): Promise<void> {
   if (!hmsActions) {
-    return
+    return;
   }
 
   try {
-    await hmsActions.leave()
+    await hmsActions.leave();
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('[100ms] leave failed', error)
+    console.error('[100ms] leave failed', error);
   }
 }
 
 export async function sendPhotoSyncMessage(message: PhotoSyncMessage): Promise<void> {
   if (!hmsActions) {
-    return
+    return;
   }
 
   try {
-    await hmsActions.sendBroadcastMessage(JSON.stringify(message), 'PHOTO_SYNC')
+    await hmsActions.sendBroadcastMessage(JSON.stringify(message), 'PHOTO_SYNC');
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('[100ms] sendBroadcastMessage failed', error)
+    console.error('[100ms] sendBroadcastMessage failed', error);
   }
 }
 
 export function subscribeToPhotoSync(
   handleMessage: (message: PhotoSyncMessage) => void,
 ): () => void {
-  const instance = ensureHms()
+  const instance = ensureHms();
   if (!instance || !hmsNotifications) {
-    return () => {}
+    return () => {};
   }
 
   const unsubscribe = hmsNotifications.onNotification((notification: any) => {
     if (notification?.type !== 'NEW_MESSAGE') {
-      return
+      return;
     }
 
-    const rawMessage = notification?.data?.message
+    const rawMessage = notification?.data?.message;
     if (typeof rawMessage !== 'string') {
-      return
+      return;
     }
 
-    let parsed: unknown
+    let parsed: unknown;
 
     try {
-      parsed = JSON.parse(rawMessage)
+      parsed = JSON.parse(rawMessage);
     } catch {
-      return
+      return;
     }
 
-    const data = parsed as Partial<PhotoSyncMessage>
+    const data = parsed as Partial<PhotoSyncMessage>;
 
     if (data.type !== 'navigate_photo') {
-      return
+      return;
     }
 
     if (
@@ -210,7 +210,7 @@ export function subscribeToPhotoSync(
       !Number.isFinite(data.photoIndex) ||
       typeof data.photoId !== 'string'
     ) {
-      return
+      return;
     }
 
     handleMessage({
@@ -219,54 +219,51 @@ export function subscribeToPhotoSync(
       photoIndex: data.photoIndex,
       navigatorId: typeof data.navigatorId === 'string' ? data.navigatorId : '',
       timestamp: typeof data.timestamp === 'number' ? data.timestamp : Date.now(),
-    })
-  })
+    });
+  });
 
-  return typeof unsubscribe === 'function' ? unsubscribe : () => {}
+  return typeof unsubscribe === 'function' ? unsubscribe : () => {};
 }
 
 export function getHmsStore() {
-  ensureHms()
-  return hmsStore
+  ensureHms();
+  return hmsStore;
 }
 
 export function getHmsActions() {
-  ensureHms()
-  return hmsActions
+  ensureHms();
+  return hmsActions;
 }
 
-export async function startPreview(params: {
-  authToken: string
-  userName: string
-}): Promise<void> {
-  const instance = ensureHms()
+export async function startPreview(params: { authToken: string; userName: string }): Promise<void> {
+  const instance = ensureHms();
   if (!instance || !hmsActions) {
-    return
+    return;
   }
 
   try {
     await hmsActions.preview({
       authToken: params.authToken,
       userName: params.userName,
-    })
+    });
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('[100ms] preview failed', error)
-    throw error
+    console.error('[100ms] preview failed', error);
+    throw error;
   }
 }
 
 export async function stopPreview(): Promise<void> {
   if (!hmsActions) {
-    return
+    return;
   }
 
   try {
     // Use leave() to stop preview, as there's no explicit stopPreview method
-    await hmsActions.leave()
+    await hmsActions.leave();
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('[100ms] stop preview failed', error)
+    console.error('[100ms] stop preview failed', error);
   }
 }
 
@@ -275,159 +272,159 @@ export async function attachPreviewVideo(
   retries = 5,
 ): Promise<void> {
   if (!hmsStore || !hmsActions) {
-    return
+    return;
   }
 
   // Ensure video element has required attributes
-  videoElement.autoplay = true
-  videoElement.muted = true
-  videoElement.playsInline = true
+  videoElement.autoplay = true;
+  videoElement.muted = true;
+  videoElement.playsInline = true;
 
   for (let i = 0; i < retries; i++) {
     try {
       // Try to get video track from local peer first (more reliable)
-      const localPeer = hmsStore.getState(selectLocalPeer)
-      let videoTrack = localPeer?.videoTrack
-      
+      const localPeer = hmsStore.getState(selectLocalPeer);
+      let videoTrack = localPeer?.videoTrack;
+
       // Fallback to track ID if peer object doesn't have track
       if (!videoTrack) {
-        const videoTrackID = hmsStore.getState(selectLocalVideoTrackID)
+        const videoTrackID = hmsStore.getState(selectLocalVideoTrackID);
         if (videoTrackID) {
           // Use track ID for attachment
-          await hmsActions.attachVideo(videoTrackID, videoElement)
-          
+          await hmsActions.attachVideo(videoTrackID, videoElement);
+
           // Ensure video plays after attachment
           try {
-            await videoElement.play()
+            await videoElement.play();
           } catch (playError) {
             // eslint-disable-next-line no-console
-            console.warn('[100ms] Video play failed, but track is attached:', playError)
+            console.warn('[100ms] Video play failed, but track is attached:', playError);
           }
-          
-          return
+
+          return;
         }
       } else {
         // Use track object directly (as shown in React example)
-        await hmsActions.attachVideo(videoTrack, videoElement)
-        
+        await hmsActions.attachVideo(videoTrack, videoElement);
+
         // Ensure video plays after attachment
         try {
-          await videoElement.play()
+          await videoElement.play();
         } catch (playError) {
           // eslint-disable-next-line no-console
-          console.warn('[100ms] Video play failed, but track is attached:', playError)
+          console.warn('[100ms] Video play failed, but track is attached:', playError);
         }
-        
-        return
+
+        return;
       }
-      
+
       // If track not available, wait a bit before retrying
       if (i < retries - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 300))
+        await new Promise((resolve) => setTimeout(resolve, 300));
       }
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('[100ms] attach preview video failed (attempt ' + (i + 1) + '):', error)
+      console.error('[100ms] attach preview video failed (attempt ' + (i + 1) + '):', error);
       if (i === retries - 1) {
-        throw error
+        throw error;
       }
-      await new Promise((resolve) => setTimeout(resolve, 300))
+      await new Promise((resolve) => setTimeout(resolve, 300));
     }
   }
-  
+
   // eslint-disable-next-line no-console
-  console.warn('[100ms] Video track not available after', retries, 'attempts')
+  console.warn('[100ms] Video track not available after', retries, 'attempts');
 }
 
 export async function setLocalVideoEnabled(enabled: boolean): Promise<void> {
   if (!hmsActions) {
     // eslint-disable-next-line no-console
-    console.warn('[100ms] HMS actions not available')
-    return
+    console.warn('[100ms] HMS actions not available');
+    return;
   }
 
   try {
-    await hmsActions.setLocalVideoEnabled(enabled)
+    await hmsActions.setLocalVideoEnabled(enabled);
     // eslint-disable-next-line no-console
-    console.log('[100ms] Video enabled set to:', enabled)
+    console.log('[100ms] Video enabled set to:', enabled);
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('[100ms] set local video enabled failed', error)
-    throw error // Re-throw to let caller handle it
+    console.error('[100ms] set local video enabled failed', error);
+    throw error; // Re-throw to let caller handle it
   }
 }
 
 export async function setLocalAudioEnabled(enabled: boolean): Promise<void> {
   if (!hmsActions) {
     // eslint-disable-next-line no-console
-    console.warn('[100ms] HMS actions not available')
-    return
+    console.warn('[100ms] HMS actions not available');
+    return;
   }
 
   try {
-    await hmsActions.setLocalAudioEnabled(enabled)
+    await hmsActions.setLocalAudioEnabled(enabled);
     // eslint-disable-next-line no-console
-    console.log('[100ms] Audio enabled set to:', enabled)
+    console.log('[100ms] Audio enabled set to:', enabled);
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('[100ms] set local audio enabled failed', error)
-    throw error // Re-throw to let caller handle it
+    console.error('[100ms] set local audio enabled failed', error);
+    throw error; // Re-throw to let caller handle it
   }
 }
 
 export async function applyVirtualBackgroundToPreview(options: {
-  mode?: 'none' | 'blur' | 'image'
-  imageUrl?: string
+  mode?: 'none' | 'blur' | 'image';
+  imageUrl?: string;
 }): Promise<void> {
   if (!hmsActions || !hmsStore) {
-    return
+    return;
   }
 
-  const mode = options.mode ?? 'none'
+  const mode = options.mode ?? 'none';
 
   // Initialize plugin if needed
   if (!virtualBackgroundPlugin && mode !== 'none') {
     virtualBackgroundPlugin = new HMSVBPlugin(
       HMSVirtualBackgroundTypes.NONE,
       HMSVirtualBackgroundTypes.NONE,
-    )
+    );
 
-    const support = virtualBackgroundPlugin.checkSupport()
+    const support = virtualBackgroundPlugin.checkSupport();
     if (!support || (support as any).errMsg) {
       // eslint-disable-next-line no-console
-      console.warn('[100ms] virtual background not supported:', (support as any)?.errMsg)
-      return
+      console.warn('[100ms] virtual background not supported:', (support as any)?.errMsg);
+      return;
     }
   }
 
   if (mode === 'none') {
     if (!virtualBackgroundPlugin) {
-      return
+      return;
     }
 
     try {
       const isVirtualBackgroundEnabled = hmsStore.getState(
         selectIsLocalVideoPluginPresent(virtualBackgroundPlugin.getName()),
-      )
+      );
 
       if (isVirtualBackgroundEnabled) {
-        await hmsActions.removePluginFromVideoTrack(virtualBackgroundPlugin)
+        await hmsActions.removePluginFromVideoTrack(virtualBackgroundPlugin);
       }
 
       await virtualBackgroundPlugin.setBackground(
         HMSVirtualBackgroundTypes.NONE,
         HMSVirtualBackgroundTypes.NONE,
-      )
+      );
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('[100ms] remove virtual background failed', error)
+      console.error('[100ms] remove virtual background failed', error);
     }
 
-    return
+    return;
   }
 
   if (!virtualBackgroundPlugin) {
-    return
+    return;
   }
 
   try {
@@ -435,32 +432,31 @@ export async function applyVirtualBackgroundToPreview(options: {
       await virtualBackgroundPlugin.setBackground(
         HMSVirtualBackgroundTypes.BLUR,
         HMSVirtualBackgroundTypes.BLUR,
-      )
+      );
     } else if (mode === 'image' && options.imageUrl) {
-      const image = document.createElement('img')
-      const isAbsoluteUrl = /^https?:\/\//i.test(options.imageUrl)
+      const image = document.createElement('img');
+      const isAbsoluteUrl = /^https?:\/\//i.test(options.imageUrl);
 
       if (isAbsoluteUrl) {
-        image.crossOrigin = 'anonymous'
+        image.crossOrigin = 'anonymous';
       }
 
-      image.src = options.imageUrl
-      await image.decode()
-      await virtualBackgroundPlugin.setBackground(image, HMSVirtualBackgroundTypes.IMAGE)
+      image.src = options.imageUrl;
+      await image.decode();
+      await virtualBackgroundPlugin.setBackground(image, HMSVirtualBackgroundTypes.IMAGE);
     }
 
     const isVirtualBackgroundEnabled = hmsStore.getState(
       selectIsLocalVideoPluginPresent(virtualBackgroundPlugin.getName()),
-    )
+    );
 
     if (!isVirtualBackgroundEnabled) {
       // Recommended value from 100ms docs.
-      const pluginFrameRate = 15
-      await hmsActions.addPluginToVideoTrack(virtualBackgroundPlugin, pluginFrameRate)
+      const pluginFrameRate = 15;
+      await hmsActions.addPluginToVideoTrack(virtualBackgroundPlugin, pluginFrameRate);
     }
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('[100ms] virtual background failure', error)
+    console.error('[100ms] virtual background failure', error);
   }
 }
-

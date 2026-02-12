@@ -1,11 +1,11 @@
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const DB_FILE_PATH = path.join(__dirname, 'db.json')
+const DB_FILE_PATH = path.join(__dirname, 'db.json');
 
 /**
  * Very lightweight JSON "database" for the demo.
@@ -15,56 +15,56 @@ let db = {
   meetups: {},
   sessions: {},
   photoEventsBySession: {},
-}
+};
 
 function loadDbFromDisk() {
   if (!fs.existsSync(DB_FILE_PATH)) {
-    saveDbToDisk()
-    return
+    saveDbToDisk();
+    return;
   }
 
   try {
-    const raw = fs.readFileSync(DB_FILE_PATH, 'utf-8')
+    const raw = fs.readFileSync(DB_FILE_PATH, 'utf-8');
     if (!raw) {
-      return
+      return;
     }
-    const parsed = JSON.parse(raw)
+    const parsed = JSON.parse(raw);
     db = {
       meetups: parsed.meetups || {},
       sessions: parsed.sessions || {},
       photoEventsBySession: parsed.photoEventsBySession || {},
-    }
+    };
   } catch {
     // If anything goes wrong, start from a clean slate.
     db = {
       meetups: {},
       sessions: {},
       photoEventsBySession: {},
-    }
+    };
   }
 }
 
 function saveDbToDisk() {
-  const payload = JSON.stringify(db, null, 2)
-  fs.writeFileSync(DB_FILE_PATH, payload, 'utf-8')
+  const payload = JSON.stringify(db, null, 2);
+  fs.writeFileSync(DB_FILE_PATH, payload, 'utf-8');
 }
 
-loadDbFromDisk()
+loadDbFromDisk();
 
 // ---------------------------------------------------------------------------
 // Meetups
 // ---------------------------------------------------------------------------
 
 export function getMeetupById(id) {
-  return db.meetups[id] || null
+  return db.meetups[id] || null;
 }
 
 export function upsertMeetup(meetup) {
   if (!meetup || !meetup.id) {
-    return
+    return;
   }
-  db.meetups[meetup.id] = meetup
-  saveDbToDisk()
+  db.meetups[meetup.id] = meetup;
+  saveDbToDisk();
 }
 
 // ---------------------------------------------------------------------------
@@ -73,18 +73,18 @@ export function upsertMeetup(meetup) {
 
 export function createSessionRecord(session) {
   if (!session || !session.sessionId) {
-    return
+    return;
   }
-  db.sessions[session.sessionId] = session
-  saveDbToDisk()
+  db.sessions[session.sessionId] = session;
+  saveDbToDisk();
 }
 
 export function getSessionById(sessionId) {
-  return db.sessions[sessionId] || null
+  return db.sessions[sessionId] || null;
 }
 
 export function getAllSessions() {
-  return Object.values(db.sessions)
+  return Object.values(db.sessions);
 }
 
 // ---------------------------------------------------------------------------
@@ -93,16 +93,15 @@ export function getAllSessions() {
 
 export function appendPhotoEventRecord(sessionId, event) {
   if (!sessionId || !event) {
-    return
+    return;
   }
   if (!db.photoEventsBySession[sessionId]) {
-    db.photoEventsBySession[sessionId] = []
+    db.photoEventsBySession[sessionId] = [];
   }
-  db.photoEventsBySession[sessionId].push(event)
-  saveDbToDisk()
+  db.photoEventsBySession[sessionId].push(event);
+  saveDbToDisk();
 }
 
 export function getPhotoEventsForSession(sessionId) {
-  return db.photoEventsBySession[sessionId] || []
+  return db.photoEventsBySession[sessionId] || [];
 }
-

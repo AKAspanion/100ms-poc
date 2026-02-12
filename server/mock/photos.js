@@ -1,4 +1,4 @@
-export const MOCK_ALBUM_ID = 'demo-album'
+export const MOCK_ALBUM_ID = 'demo-album';
 
 export const PHOTOS = [
   {
@@ -109,9 +109,8 @@ export const PHOTOS = [
     title: 'Family memory #12',
     index: 11,
   },
-]
+];
 
 export function getPhotosForAlbum(albumId = MOCK_ALBUM_ID) {
-  return PHOTOS.filter((photo) => photo.albumId === albumId)
+  return PHOTOS.filter((photo) => photo.albumId === albumId);
 }
-
