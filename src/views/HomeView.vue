@@ -5,14 +5,24 @@ import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
+import Dropdown from 'primevue/dropdown'
 import { getMeetupAuthToken } from '../api/client'
 import { useMeetupStore } from '../stores/meetupStore'
 
 const router = useRouter()
 const meetupIdInput = ref('demo-meetup')
+const selectedUserId = ref('demo-user-1')
 const isJoining = ref(false)
 const joinErrorMessage = ref<string | null>(null)
 const meetupStore = useMeetupStore()
+
+const userOptions = [
+  { label: 'you (Host)', value: 'demo-user-1' },
+  { label: 'mom (Guest)', value: 'demo-user-2' },
+  { label: 'dad (Guest)', value: 'demo-user-3' },
+  { label: 'sister (Guest)', value: 'demo-user-4' },
+  { label: 'brother (Guest)', value: 'demo-user-5' },
+]
 
 async function handleJoinMeetup() {
   const trimmed = meetupIdInput.value.trim()
@@ -23,11 +33,16 @@ async function handleJoinMeetup() {
     return
   }
 
+  if (!selectedUserId.value) {
+    joinErrorMessage.value = 'Please select a user'
+    return
+  }
+
   isJoining.value = true
 
   try {
     // Verify the user is logged in and invited for this meetup, and get a 100ms JWT.
-    const response = await getMeetupAuthToken(trimmed)
+    const response = await getMeetupAuthToken(trimmed, selectedUserId.value)
 
     meetupStore.hmsAuthToken = response.token
     meetupStore.currentUserName = response.userName
@@ -61,29 +76,43 @@ async function handleJoinMeetup() {
       </template>
 
       <template #content>
-        <form
-          class="mt-6 flex flex-col gap-3 sm:flex-row"
-          @submit.prevent="handleJoinMeetup"
-        >
-          <span class="p-input-icon-left w-full flex-1">
-            <i class="pi pi-users text-slate-400" />
-            <InputText
-              v-model="meetupIdInput"
-              name="meetupId"
-              autocomplete="off"
-              placeholder="e.g. demo-meetup"
-              class="w-full text-sm"
+        <div class="mt-6 flex flex-col gap-3">
+          <div class="flex flex-col gap-2">
+            <label class="text-xs font-medium text-slate-300">Select User</label>
+            <Dropdown
+              v-model="selectedUserId"
+              :options="userOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select a user"
+              class="w-full"
             />
-          </span>
+          </div>
 
-          <Button
-            type="submit"
-            label="Join Meetup"
-            icon="pi pi-video"
-            class="w-full justify-center sm:w-auto"
-            :loading="isJoining"
-          />
-        </form>
+          <form
+            class="flex flex-col gap-3 sm:flex-row"
+            @submit.prevent="handleJoinMeetup"
+          >
+            <span class="p-input-icon-left w-full flex-1">
+              <i class="pi pi-users text-slate-400" />
+              <InputText
+                v-model="meetupIdInput"
+                name="meetupId"
+                autocomplete="off"
+                placeholder="e.g. demo-meetup"
+                class="w-full text-sm"
+              />
+            </span>
+
+            <Button
+              type="submit"
+              label="Join Meetup"
+              icon="pi pi-video"
+              class="w-full justify-center sm:w-auto"
+              :loading="isJoining"
+            />
+          </form>
+        </div>
 
         <Message
           v-if="joinErrorMessage"

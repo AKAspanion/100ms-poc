@@ -6,13 +6,14 @@ export interface MeetupDetail {
   recordedAt: string | null
   durationSeconds: number | null
   photoCount: number
-  prebuiltUrl: string
 }
 
 export interface MeetupAuthTokenResponse {
   token: string
   userName: string
   userId: string
+  userType: 'host' | 'guest'
+  role: string
 }
 
 export interface Photo {

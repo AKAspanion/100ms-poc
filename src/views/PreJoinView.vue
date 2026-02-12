@@ -186,7 +186,9 @@ async function initialisePreJoin() {
     // If we don't already have a token (e.g. user came via direct link),
     // fetch one now and populate the store.
     if (!store.hmsAuthToken || !store.currentUserId) {
-      const response = await getMeetupAuthToken(meetupId.value)
+      // Use userId from store if available, otherwise default to demo-user-1
+      const userIdToUse = store.currentUserId || 'demo-user-1'
+      const response = await getMeetupAuthToken(meetupId.value, userIdToUse)
       store.hmsAuthToken = response.token
       store.currentUserName = response.userName
       store.currentUserId = response.userId

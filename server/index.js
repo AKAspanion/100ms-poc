@@ -14,6 +14,7 @@ import {
   getSessionById,
   upsertMeetup,
 } from './jsonDb.js'
+import { users, MOCK_MEETUP_ID } from './users.js'
 
 // Resolve __dirname in ESM so we can load server/.env
 const __filename = fileURLToPath(import.meta.url)
@@ -61,25 +62,7 @@ app.use((req, res, next) => {
 // In-memory demo data – replace with real persistence later.
 // ---------------------------------------------------------------------------
 
-const MOCK_MEETUP_ID = 'demo-meetup'
 const MOCK_ALBUM_ID = 'demo-album'
-
-// For this POC we assume the user is always "demo-user" and
-// store their details and per-meetup role statically here.
-const users = new Map([
-  [
-    'demo-user',
-    {
-      id: 'demo-user',
-      name: 'Bill',
-      email: 'demo-user@memrico.local',
-      // Simple role mapping per meetup – extend as needed.
-      rolesByMeetup: {
-        [MOCK_MEETUP_ID]: 'host',
-      },
-    },
-  ],
-])
 
 function getOrCreateMeetup(meetupId) {
   const existing = getMeetupById(meetupId)
@@ -96,10 +79,6 @@ function getOrCreateMeetup(meetupId) {
     recordedAt: '2023-08-25T14:30:00Z',
     durationSeconds: 47 * 60,
     photoCount: 12,
-    prebuiltUrl:
-      process.env.PREBUILT_URL ||
-      'https://demo-template.app.100ms.live/meeting/demo-room-code?userId=demo-user&name=Bill',
-    // Will be filled when the meetup is scheduled and a room is created.
     videoRoomId: process.env.HMS_ROOM_ID || null,
   }
 
@@ -220,10 +199,13 @@ async function ensureHmsRoomForMeetup(meetup) {
 // Routes
 // ---------------------------------------------------------------------------
 
-function getCurrentUser(_req) {
-  // In a real app this would look at a session, cookie or Authorization header.
-  // For this demo we always assume the logged-in user is "demo-user".
-  return users.get('demo-user') || null
+function getCurrentUser(req) {
+  // Get userId from query parameter
+  const userId = req.query.userId || req.query.user_id
+  if (!userId) {
+    return null
+  }
+  return users.get(userId) || null
 }
 
 function getUserRoleForMeetup(user, meetupId) {
@@ -267,7 +249,7 @@ app.get('/meetups/:id/auth-token', async (req, res) => {
 
   const user = getCurrentUser(req)
   if (!user) {
-    return res.status(401).json({ error: 'User not authenticated' })
+    return res.status(401).json({ error: 'User not authenticated. Please provide userId query parameter.' })
   }
 
   const role = getUserRoleForMeetup(user, meetupId)
@@ -290,6 +272,8 @@ app.get('/meetups/:id/auth-token', async (req, res) => {
       token,
       userName: user.name,
       userId: user.id,
+      userType: user.type,
+      role,
     })
   } catch (error) {
     return res

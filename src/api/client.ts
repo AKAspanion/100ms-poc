@@ -34,8 +34,13 @@ export async function getMeetup(meetupId: string): Promise<MeetupDetail> {
   return http<MeetupDetail>(`/meetups/${encodeURIComponent(meetupId)}`)
 }
 
-export async function getMeetupAuthToken(meetupId: string): Promise<MeetupAuthTokenResponse> {
-  return http<MeetupAuthTokenResponse>(`/meetups/${encodeURIComponent(meetupId)}/auth-token`)
+export async function getMeetupAuthToken(
+  meetupId: string,
+  userId: string,
+): Promise<MeetupAuthTokenResponse> {
+  return http<MeetupAuthTokenResponse>(
+    `/meetups/${encodeURIComponent(meetupId)}/auth-token?userId=${encodeURIComponent(userId)}`,
+  )
 }
 
 export async function getAlbumPhotos(albumId: string): Promise<Photo[]> {
