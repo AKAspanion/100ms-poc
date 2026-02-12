@@ -1,24 +1,24 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
-import HomeView from './views/HomeView.vue';
-import PreJoinView from './views/PreJoinView.vue';
-import MeetupRoomView from './views/MeetupRoomView.vue';
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'home',
-    component: HomeView,
+    // @ts-expect-error - Vue SFC dynamic import
+    component: () => import('./views/HomeView.vue'),
   },
   {
     path: '/meetups/:meetupId',
     name: 'meetup',
-    component: PreJoinView,
+    // @ts-expect-error - Vue SFC dynamic import
+    component: () => import('./views/PreJoinView.vue'),
     props: true,
   },
   {
     path: '/meetups/:meetupId/room',
     name: 'meetup-room',
-    component: MeetupRoomView,
+    // @ts-expect-error - Vue SFC dynamic import
+    component: () => import('./views/MeetupRoomView.vue'),
     props: true,
   },
 ];
