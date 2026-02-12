@@ -9,7 +9,7 @@ const users = new Map<string, User>([
     {
       id: 'demo-user-1',
       name: 'ankit',
-      email: 'demo-user-1@memrico.local',
+      email: 'demo-user-1@demo.local',
       type: 'host',
       // Simple role mapping per meetup – extend as needed.
       rolesByMeetup: {
@@ -22,7 +22,7 @@ const users = new Map<string, User>([
     {
       id: 'demo-user-2',
       name: 'mom',
-      email: 'demo-user-2@memrico.local',
+      email: 'demo-user-2@demo.local',
       type: 'guest',
       rolesByMeetup: {
         [MOCK_MEETUP_ID]: 'guest',
@@ -34,7 +34,7 @@ const users = new Map<string, User>([
     {
       id: 'demo-user-3',
       name: 'dad',
-      email: 'demo-user-3@memrico.local',
+      email: 'demo-user-3@demo.local',
       type: 'guest',
       rolesByMeetup: {
         [MOCK_MEETUP_ID]: 'guest',
@@ -46,7 +46,7 @@ const users = new Map<string, User>([
     {
       id: 'demo-user-4',
       name: 'sister',
-      email: 'demo-user-4@memrico.local',
+      email: 'demo-user-4@demo.local',
       type: 'guest',
       rolesByMeetup: {
         [MOCK_MEETUP_ID]: 'guest',
@@ -58,7 +58,7 @@ const users = new Map<string, User>([
     {
       id: 'demo-user-5',
       name: 'brother',
-      email: 'demo-user-5@memrico.local',
+      email: 'demo-user-5@demo.local',
       type: 'guest',
       rolesByMeetup: {
         [MOCK_MEETUP_ID]: 'guest',

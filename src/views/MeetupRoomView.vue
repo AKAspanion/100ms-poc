@@ -746,16 +746,16 @@
 </script>
 
 <template>
-  <div class="flex h-screen flex-col bg-slate-950 overflow-hidden">
+  <div class="flex h-screen flex-col bg-surface-50 overflow-hidden">
     <!-- Top Section: Participants -->
-    <div class="flex gap-2 overflow-x-auto border-b border-slate-800 bg-slate-900 px-3 py-3">
+    <div class="flex gap-2 overflow-x-auto border-b border-surface-50 bg-surface-50 px-3 py-3">
       <div
         v-for="participant in participants"
         :key="participant.peer.id"
         class="relative h-20 w-30 shrink-0 overflow-hidden rounded-lg border"
-        :class="participant.peer.isLocal ? 'border-green-500' : 'border-slate-600'"
+        :class="participant.peer.isLocal ? 'border-highlight' : 'border-surface-50'"
       >
-        <div class="relative h-full w-full overflow-hidden bg-slate-800">
+        <div class="relative h-full w-full overflow-hidden bg-surface-100">
           <video
             :ref="(el) => setVideoElementRef(participant.peer.id, el as HTMLVideoElement)"
             autoplay
@@ -766,10 +766,10 @@
 
           <div
             v-if="!isPeerVideoOn(participant.peer)"
-            class="absolute inset-0 flex items-center justify-center bg-slate-800 text-slate-200"
+            class="absolute inset-0 flex items-center justify-center bg-surface-100 text-color"
           >
             <div
-              class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-400 bg-slate-900/80 text-xs font-semibold"
+              class="flex h-10 w-10 items-center justify-center rounded-full border border-surface-50 bg-surface-50/80 text-xs font-semibold"
             >
               {{ getPeerInitials(participant.peer) }}
             </div>
@@ -777,18 +777,18 @@
         </div>
 
         <div
-          class="absolute bottom-0.75 left-1 right-1 flex items-center justify-between text-[9px] text-slate-50"
+          class="absolute bottom-0.75 left-1 right-1 flex items-center justify-between text-[9px] text-color"
         >
-          <span class="rounded-[3px] bg-black/70 px-1.25 py-0.5">
+          <span class="rounded-[3px] bg-surface-0/70 px-1.25 py-0.5">
             {{ participant.peer.isLocal ? 'You' : participant.peer.name || 'Participant' }}
           </span>
-          <span class="ml-1 rounded-[3px] bg-black/70 px-1 py-0.5 text-[10px]">
+          <span class="ml-1 rounded-[3px] bg-surface-0/70 px-1 py-0.5 text-[10px]">
             <span
               :class="[
                 'fa-solid',
                 isPeerMicOn(participant.peer)
-                  ? 'fa-microphone text-green-400'
-                  : 'fa-microphone-slash text-slate-400',
+                  ? 'fa-microphone text-primary'
+                  : 'fa-microphone-slash text-muted-color',
               ]"
             />
           </span>
@@ -797,41 +797,41 @@
 
       <div
         v-if="participants.length === 0"
-        class="flex h-20 w-30 shrink-0 items-center justify-center rounded-lg border border-slate-600 bg-slate-800 p-2"
+        class="flex h-20 w-30 shrink-0 items-center justify-center rounded-lg border border-surface-50 bg-surface-100 p-2"
       >
-        <span class="text-[10px] text-slate-400">waiting..</span>
+        <span class="text-[10px] text-muted-color">waiting..</span>
       </div>
     </div>
 
     <!-- Middle Section: Photo Display -->
     <div
-      class="relative w-full flex flex-1 flex-col items-center justify-center bg-slate-950 px-4 py-4 overflow-y-auto"
+      class="relative w-full flex flex-1 flex-col items-center justify-center bg-surface-0 px-4 py-4 overflow-y-auto"
     >
       <div class="relative flex h-full w-full items-center">
         <div
           v-if="!store.photos.length"
-          class="flex h-full w-full min-h-100 items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-center"
+          class="flex h-full w-full min-h-100 items-center justify-center rounded-lg border border-surface-50 bg-surface-50 text-center"
         >
           <div class="space-y-2">
-            <p class="text-lg font-semibold text-slate-300">PHOTO DISPLAY</p>
-            <p class="text-sm text-slate-400">No photos available</p>
+            <p class="text-lg font-semibold text-color">PHOTO DISPLAY</p>
+            <p class="text-sm text-muted-color">No photos available</p>
           </div>
         </div>
 
         <div
           v-else
-          class="relative h-full w-full overflow-hidden rounded-lg border border-slate-700 bg-slate-900"
+          class="relative h-full w-full overflow-hidden rounded-lg border border-surface-50 bg-surface-50"
         >
           <!-- Previous Button -->
           <button
-            class="absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-slate-800/90 text-white shadow-lg transition-colors hover:bg-slate-700"
+            class="absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface-0 text-color shadow-lg transition-colors hover:bg-surface-50"
             @click="handlePreviousPhoto"
           >
             <span class="fa-solid fa-chevron-left text-sm" />
           </button>
 
           <!-- Photo Display -->
-          <div class="relative h-full w-full overflow-hidden bg-black">
+          <div class="relative h-full w-full overflow-hidden bg-surface-50">
             <img
               v-if="store.photos[store.currentPhotoIndex]"
               :src="store.photos[store.currentPhotoIndex]?.url"
@@ -840,17 +840,17 @@
             />
             <div
               v-else
-              class="flex h-full w-full flex-col items-center justify-center gap-2 bg-slate-900 text-slate-300"
+              class="flex h-full w-full flex-col items-center justify-center gap-2 bg-surface-50 text-color"
             >
               <p class="text-lg font-semibold">PHOTO DISPLAY</p>
               <p class="text-sm">{{ store.currentMeetup?.title || 'Family Reunion 2024' }}</p>
-              <p class="text-xs text-slate-400">Swipe or tap arrows</p>
+              <p class="text-xs text-muted-color">Swipe or tap arrows</p>
             </div>
           </div>
 
           <!-- Next Button -->
           <button
-            class="absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-slate-800/90 text-white shadow-lg transition-colors hover:bg-slate-700"
+            class="absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface-0 text-color shadow-lg transition-colors hover:bg-surface-50"
             @click="handleNextPhoto"
           >
             <span class="fa-solid fa-chevron-right text-sm" />
@@ -860,7 +860,7 @@
     </div>
 
     <!-- Bottom Section: Pagination and Actions -->
-    <div class="border-t border-slate-800 bg-slate-900 px-4 py-4">
+    <div class="border-t border-surface-50 bg-surface-50 px-4 py-4">
       <!-- Pagination Thumbnails -->
       <div v-if="store.photos.length > 0" class="mb-4 flex gap-2 overflow-x-auto pb-1">
         <button
@@ -869,8 +869,8 @@
           class="flex h-15 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border transition-colors"
           :class="
             index === store.currentPhotoIndex
-              ? 'border-green-500 bg-green-500/10'
-              : 'border-slate-600 bg-slate-800 hover:border-slate-500'
+              ? 'border-highlight bg-highlight'
+              : 'border-surface-50 bg-surface-100 hover:border-highlight'
           "
           @click="handlePhotoSelected(index)"
         >
@@ -880,23 +880,25 @@
             :alt="photo.title || 'Photo ' + (index + 1)"
             class="h-full w-full object-cover"
           />
-          <span v-else class="text-xs text-slate-300">
+          <span v-else class="text-xs text-color">
             {{ index + 1 }}
           </span>
         </button>
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex items-center justify-center gap-4">
+      <div class="flex items-center justify-between gap-4">
         <!-- Chat Button -->
         <Button
+          rounded
           icon="fa-solid fa-comments"
-          class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700 p-0!"
+          class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-100 text-color transition-colors hover:bg-emphasis p-0!"
           @click="handleChat"
         />
 
         <!-- Microphone Button -->
         <Button
+        rounded
           :icon="micOn ? 'fa-solid fa-microphone' : 'fa-solid fa-microphone-slash'"
           :severity="micOn ? 'success' : 'secondary'"
           class="flex h-12 w-12 items-center justify-center rounded-full p-0!"
@@ -905,6 +907,7 @@
 
         <!-- Camera Button -->
         <Button
+        rounded
           :icon="cameraOn ? 'fa-solid fa-video' : 'fa-solid fa-video-slash'"
           :severity="cameraOn ? 'success' : 'secondary'"
           class="flex h-12 w-12 items-center justify-center rounded-full p-0!"
@@ -913,6 +916,7 @@
 
         <!-- End Call Button -->
         <Button
+        rounded
           icon="fa-solid fa-xmark"
           severity="danger"
           class="flex h-12 w-12 items-center justify-center rounded-full p-0!"

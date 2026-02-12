@@ -325,20 +325,20 @@
 
 <template>
   <div class="flex h-full flex-col items-center justify-center p-4 md:p-6">
-    <Card class="w-full max-w-3xl shadow-xl shadow-black/40">
+    <Card class="w-full max-w-3xl shadow-xl shadow-surface-0/40 rounded-2xl!">
       <template #title>
         <div class="flex flex-col gap-1">
           <span class="text-lg font-semibold tracking-tight sm:text-xl">
             {{ store.currentMeetup?.title || 'Family meetup' }}
           </span>
-          <span class="text-xs font-medium text-slate-300">
+          <span class="text-xs font-medium text-muted-color">
             {{ store.currentMeetup?.albumName || 'Loading album...' }}
           </span>
         </div>
       </template>
 
       <template #content>
-        <div v-if="isLoading || isPreviewLoading" class="py-8 text-center text-sm text-slate-300">
+        <div v-if="isLoading || isPreviewLoading" class="py-8 text-center text-sm text-muted-color">
           {{ isLoading ? 'Preparing your meetup, please wait…' : 'Loading preview...' }}
         </div>
 
@@ -346,7 +346,7 @@
           <!-- Left: video preview (pure camera; VB handled by 100ms in room) -->
           <div class="flex-1">
             <div
-              class="relative aspect-video overflow-hidden rounded-lg border border-slate-700 bg-black"
+              class="relative aspect-video overflow-hidden rounded-lg border border-surface bg-surface-0"
             >
               <video
                 ref="videoElementRef"
@@ -358,7 +358,7 @@
 
               <div
                 v-if="!cameraOn"
-                class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-900/80 text-slate-300"
+                class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-surface-50/80 text-color"
               >
                 <span class="fa-solid fa-video text-xl" />
                 <p class="text-xs">
@@ -373,6 +373,7 @@
             >
               <div class="flex items-center gap-3">
                 <Button
+                rounded
                   :icon="cameraOn ? 'fa-solid fa-video' : 'fa-solid fa-video-slash'"
                   :severity="cameraOn ? 'success' : 'secondary'"
                   class="flex h-10 w-10 items-center justify-center rounded-full p-0!"
@@ -380,6 +381,7 @@
                   @click="handleToggleCamera"
                 />
                 <Button
+                rounded
                   :icon="micOn ? 'fa-solid fa-microphone' : 'fa-solid fa-microphone-slash'"
                   :severity="micOn ? 'success' : 'secondary'"
                   class="flex h-10 w-10 items-center justify-center rounded-full p-0!"
@@ -390,6 +392,7 @@
               <div class="flex flex-1 flex-col gap-1 sm:items-end">
                 <div class="flex w-full gap-2 sm:justify-end">
                   <Button
+                  rounded
                     label="None"
                     size="small"
                     :severity="store.virtualBackgroundMode === 'none' ? 'success' : 'secondary'"
@@ -397,6 +400,7 @@
                     @click="handleVirtualBackgroundChange('none')"
                   />
                   <Button
+                  rounded
                     label="Blur"
                     size="small"
                     :severity="store.virtualBackgroundMode === 'blur' ? 'success' : 'secondary'"
@@ -404,6 +408,7 @@
                     @click="handleVirtualBackgroundChange('blur')"
                   />
                   <Button
+                  rounded
                     label="Custom"
                     size="small"
                     :severity="store.virtualBackgroundMode === 'image' ? 'success' : 'secondary'"
@@ -417,15 +422,16 @@
 
           <!-- Right: user info + join -->
           <div class="flex w-full flex-col gap-4 lg:w-80">
-            <div class="rounded-lg bg-slate-900/70 p-4">
-              <p class="text-[11px] uppercase tracking-wide text-slate-400">You are joining as</p>
-              <p class="mt-1 text-sm font-semibold text-slate-50">
+            <div class="rounded-lg bg-surface-50/70 p-4">
+              <p class="text-[11px] uppercase tracking-wide text-muted-color">You are joining as</p>
+              <p class="mt-1 text-sm font-semibold text-color">
                 {{ store.currentUserName || 'Guest user' }}
               </p>
             </div>
 
             <Button
-              label="Join Meetup"
+            rounded
+              label="Join"
               icon="fa-solid fa-right-to-bracket"
               class="w-full justify-center"
               :disabled="Boolean(localErrorMessage) || isLoading"

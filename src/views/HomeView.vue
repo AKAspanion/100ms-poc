@@ -62,13 +62,13 @@
 
 <template>
   <div class="flex h-full flex-col items-center justify-center px-4 py-6">
-    <Card class="w-full max-w-xl shadow-xl shadow-black/40">
+    <Card class="w-full max-w-xl shadow-xl shadow-surface-0/40 rounded-2xl!">
       <template #title>
         <span class="text-lg font-semibold tracking-tight sm:text-xl"> Start a family meetup </span>
       </template>
 
       <template #subtitle>
-        <span class="mt-1 text-sm text-slate-300">
+        <span class="mt-1 text-sm text-muted-color">
           Enter a Meetup ID, or use the demo meetup to explore the experience.
         </span>
       </template>
@@ -76,7 +76,7 @@
       <template #content>
         <div class="flex flex-col gap-3">
           <div class="flex flex-col gap-2">
-            <label class="text-xs font-medium text-slate-300">Select User</label>
+            <label class="text-xs font-medium text-muted-color">Select User</label>
             <Dropdown
               v-model="selectedUserId"
               :options="userOptions"
@@ -89,7 +89,7 @@
 
           <form class="flex flex-col gap-3 sm:flex-row" @submit.prevent="handleJoinMeetup">
             <span class="p-input-icon-left w-full flex-1">
-              <i class="fa-solid fa-users text-slate-400" />
+              <i class="fa-solid fa-users text-muted-color" />
               <InputText
                 v-model="meetupIdInput"
                 name="meetupId"
@@ -100,6 +100,7 @@
             </span>
 
             <Button
+            rounded
               type="submit"
               label="Join Meetup"
               icon="fa-solid fa-video"
@@ -113,7 +114,7 @@
           {{ joinErrorMessage }}
         </Message>
 
-        <p class="mt-4 text-xs text-slate-400">This is a POC. It's not production ready.</p>
+        <p class="mt-4 text-xs text-muted-color">This is a POC. It's not production ready.</p>
       </template>
     </Card>
   </div>

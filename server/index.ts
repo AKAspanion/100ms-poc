@@ -389,8 +389,8 @@ app.get('/photos/:id/meetup-clips', (req: Request, res: Response) => {
       {
         meetup_id: meetup.id,
         meetup_title: meetup.title,
-        clip_url: 'https://cdn.memrico.com/clips/demo-clip.mp4',
-        thumbnail_url: 'https://cdn.memrico.com/thumbs/demo-thumb.jpg',
+        clip_url: 'https://cdn.demo.com/clips/demo-clip.mp4',
+        thumbnail_url: 'https://cdn.demo.com/thumbs/demo-thumb.jpg',
         duration_seconds: 45,
         transcript: {
           sentences: [

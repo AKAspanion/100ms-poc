@@ -5,12 +5,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        memrico: {
-          bg: '#020617',
-          surface: '#020617',
-          surfaceMuted: '#020617',
-          accent: '#38bdf8',
-        },
+        highlight: '#00D4AA',
       },
     },
   },

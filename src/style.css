@@ -1,1 +1,47 @@
 @import 'tailwindcss';
+@import 'tailwindcss-primeui';
+
+/* Map PrimeVue 3 Lara theme variables to --p-* for tailwindcss-primeui */
+:root {
+  --p-primary-color: var(--primary-color);
+  --p-primary-hover-color: var(--primary-400);
+  --p-primary-active-color: var(--primary-600);
+  --p-primary-contrast-color: var(--primary-color-text);
+  --p-primary-50: var(--primary-50);
+  --p-primary-100: var(--primary-100);
+  --p-primary-200: var(--primary-200);
+  --p-primary-300: var(--primary-300);
+  --p-primary-400: var(--primary-400);
+  --p-primary-500: var(--primary-500);
+  --p-primary-600: var(--primary-600);
+  --p-primary-700: var(--primary-700);
+  --p-primary-800: var(--primary-800);
+  --p-primary-900: var(--primary-900);
+  --p-primary-950: var(--primary-900);
+  --p-surface-0: var(--surface-0);
+  --p-surface-50: var(--surface-50);
+  --p-surface-100: var(--surface-100);
+  --p-surface-200: var(--surface-200);
+  --p-surface-300: var(--surface-300);
+  --p-surface-400: var(--surface-400);
+  --p-surface-500: var(--surface-500);
+  --p-surface-600: var(--surface-600);
+  --p-surface-700: var(--surface-700);
+  --p-surface-800: var(--surface-800);
+  --p-surface-900: var(--surface-900);
+  --p-surface-950: var(--surface-900);
+  --p-content-border-color: var(--surface-border);
+  --p-content-border-radius: var(--border-radius);
+  --p-content-hover-background: var(--surface-hover);
+  --p-content-hover-color: var(--text-color);
+  --p-text-color: var(--text-color);
+  --p-text-hover-color: var(--text-color);
+  --p-text-muted-color: var(--text-color-secondary);
+  --p-text-hover-muted-color: var(--text-color-secondary);
+  --p-highlight-background: var(--highlight-bg);
+  --p-highlight-color: var(--highlight-text-color);
+  --p-highlight-focus-background: var(--highlight-bg);
+  --p-highlight-focus-color: var(--highlight-text-color);
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
