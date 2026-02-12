@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "server": "tsx server/index.ts",
     "server:dev": "nodemon --watch server --ext ts,json --exec tsx server/index.ts",
+    "server:prod": "NODE_ENV=production tsx server/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

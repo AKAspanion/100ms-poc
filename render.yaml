@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: 100ms-poc-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm run server:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      # Add your HMS environment variables in Render dashboard:
+      # HMS_ACCESS_KEY
+      # HMS_APP_SECRET
+      # HMS_TEMPLATE_ID
+      # HMS_ROOM_ID
+      # HMS_MANAGEMENT_TOKEN
+      # HMS_API_BASE_URL (optional, defaults to https://api.100ms.live)
