@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Message from 'primevue/message'
-import Button from 'primevue/button'
 import { useMeetupStore } from '../stores/meetupStore'
-import PhotoCarousel from '../components/PhotoCarousel.vue'
 import { logPhotoEvent } from '../api/client'
 import {
   joinMeetupRoom,
@@ -24,6 +22,7 @@ import {
 import type { HMSPeer } from '@100mslive/hms-video-store'
 
 const route = useRoute()
+const router = useRouter()
 const meetupId = computed(() => (route.params.meetupId as string) || 'demo-meetup')
 
 const store = useMeetupStore()
@@ -189,6 +188,18 @@ async function initialiseMeetup() {
       // Wait a bit for room to join and peers to be available
       await new Promise((resolve) => setTimeout(resolve, 500))
 
+      // Apply user's preferred initial media state from pre-join
+      const preferredCameraOn = store.preferredCameraOn ?? true
+      const preferredMicOn = store.preferredMicOn ?? true
+
+      cameraOn.value = preferredCameraOn
+      micOn.value = preferredMicOn
+
+      await Promise.all([
+        setLocalVideoEnabled(preferredCameraOn),
+        setLocalAudioEnabled(preferredMicOn),
+      ])
+
       // Setup peer subscriptions
       setupPeerSubscriptions()
 
@@ -313,6 +324,44 @@ async function handleToggleMic() {
   }
 }
 
+function handlePreviousPhoto() {
+  if (!store.photos.length) {
+    return
+  }
+  const newIndex = store.currentPhotoIndex > 0 
+    ? store.currentPhotoIndex - 1 
+    : store.photos.length - 1
+  handlePhotoSelected(newIndex)
+}
+
+function handleNextPhoto() {
+  if (!store.photos.length) {
+    return
+  }
+  const newIndex = store.currentPhotoIndex < store.photos.length - 1 
+    ? store.currentPhotoIndex + 1 
+    : 0
+  handlePhotoSelected(newIndex)
+}
+
+function handleChat() {
+  // TODO: Implement chat functionality
+  // eslint-disable-next-line no-console
+  console.log('Chat clicked')
+}
+
+function handleScreenShare() {
+  // TODO: Implement screen share functionality
+  // eslint-disable-next-line no-console
+  console.log('Screen share clicked')
+}
+
+async function handleEndCall() {
+  await leaveMeetupRoom()
+  // Navigate back to home
+  router.push('/')
+}
+
 onMounted(() => {
   void initialiseMeetup()
 })
@@ -348,38 +397,16 @@ onUnmounted(async () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 pb-8">
-    <div class="flex items-center gap-3 overflow-x-auto pb-1">
+  <div class="flex min-h-screen flex-col bg-slate-950">
+    <!-- Top Section: Participants -->
+    <div class="flex gap-2 overflow-x-auto border-b border-slate-800 bg-slate-900 px-3 py-3">
       <div
         v-for="participant in participants"
         :key="participant.peer.id"
-        class="relative min-w-[130px] overflow-hidden rounded-lg border border-slate-600 bg-slate-900/80"
-        :class="participant.peer.isLocal ? '!border-teal-400' : ''"
+        class="relative h-[60px] w-[80px] shrink-0 overflow-hidden rounded-lg border"
+        :class="participant.peer.isLocal ? 'border-green-500' : 'border-slate-600'"
       >
-        <!-- Controls above video preview for local participant -->
-        <div
-          v-if="participant.peer.isLocal"
-          class="flex gap-2 border-b border-slate-600 bg-slate-800/50 p-2"
-        >
-          <Button
-            :label="cameraOn ? 'Camera On' : 'Camera Off'"
-            icon="pi pi-video"
-            size="small"
-            :severity="cameraOn ? 'success' : 'secondary'"
-            class="flex-1 justify-center text-xs"
-            @click="handleToggleCamera"
-          />
-          <Button
-            :label="micOn ? 'Mic On' : 'Mic Off'"
-            icon="pi pi-microphone"
-            size="small"
-            :severity="micOn ? 'success' : 'secondary'"
-            class="flex-1 justify-center text-xs"
-            @click="handleToggleMic"
-          />
-        </div>
-
-        <div class="relative aspect-video w-full overflow-hidden bg-black">
+        <div class="relative h-[60px] w-[80px] overflow-hidden bg-slate-800">
           <video
             :ref="(el) => setVideoElementRef(participant.peer.id, el as HTMLVideoElement)"
             autoplay
@@ -390,41 +417,156 @@ onUnmounted(async () => {
 
           <div
             v-if="!participant.peer.videoTrack"
-            class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-900/80 text-slate-300"
+            class="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-slate-800 text-slate-300"
           >
-            <span class="pi pi-video text-xl" />
-            <p class="text-xs">Camera Off</p>
+            <span class="pi pi-desktop text-xs" />
           </div>
         </div>
 
-        <div class="p-2">
-          <span class="text-[11px] uppercase tracking-wide text-slate-400">
-            {{ participant.peer.isLocal ? 'You' : 'Video Feed' }}
-          </span>
-          <p class="text-xs font-semibold text-slate-50">
-            {{ participant.peer.name || (participant.peer.isLocal ? 'You' : 'Participant') }}
-          </p>
-        </div>
+        <span
+          class="absolute bottom-[3px] left-1 bg-black/70 px-[5px] py-[2px] rounded-[3px] text-[9px] text-slate-50"
+        >
+          {{ participant.peer.isLocal ? 'You' : (participant.peer.name || 'Participant') }}
+        </span>
       </div>
 
       <div
         v-if="participants.length === 0"
-        class="flex min-w-[130px] items-center justify-center rounded-lg border border-slate-600 bg-slate-900/80 p-4"
+        class="flex h-[60px] w-[80px] shrink-0 items-center justify-center rounded-lg border border-slate-600 bg-slate-800 p-2"
       >
-        <span class="text-xs text-slate-400">No participants yet</span>
+        <span class="text-[10px] text-slate-400">No participants yet</span>
       </div>
     </div>
 
-    <PhotoCarousel
-      :photos="store.photos"
-      :current-index="store.currentPhotoIndex"
-      @photoSelected="handlePhotoSelected"
-    />
+    <!-- Middle Section: Photo Display -->
+    <div class="relative flex flex-1 flex-col items-center justify-center bg-slate-950 px-4 py-6">
+      <div class="relative w-full max-w-2xl">
+        <div
+          v-if="!store.photos.length"
+          class="flex min-h-[400px] items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-center"
+        >
+          <div class="space-y-2">
+            <p class="text-lg font-semibold text-slate-300">PHOTO DISPLAY</p>
+            <p class="text-sm text-slate-400">No photos available</p>
+          </div>
+        </div>
 
+        <div
+          v-else
+          class="relative overflow-hidden rounded-lg border border-slate-700 bg-slate-900"
+        >
+          <!-- Previous Button -->
+          <button
+            class="absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-slate-800/90 text-white shadow-lg transition-colors hover:bg-slate-700"
+            @click="handlePreviousPhoto"
+          >
+            <span class="pi pi-chevron-left text-sm" />
+          </button>
+
+          <!-- Photo Display -->
+          <div class="relative aspect-[4/3] w-full overflow-hidden bg-black">
+            <img
+              v-if="store.photos[store.currentPhotoIndex]"
+              :src="store.photos[store.currentPhotoIndex].url"
+              :alt="store.photos[store.currentPhotoIndex].title"
+              class="h-full w-full object-contain"
+            />
+            <div
+              v-else
+              class="flex h-full w-full flex-col items-center justify-center gap-2 bg-slate-900 text-slate-300"
+            >
+              <p class="text-lg font-semibold">PHOTO DISPLAY</p>
+              <p class="text-sm">{{ store.currentMeetup?.title || 'Family Reunion 2024' }}</p>
+              <p class="text-xs text-slate-400">Swipe or tap arrows</p>
+            </div>
+          </div>
+
+          <!-- Next Button -->
+          <button
+            class="absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-slate-800/90 text-white shadow-lg transition-colors hover:bg-slate-700"
+            @click="handleNextPhoto"
+          >
+            <span class="pi pi-chevron-right text-sm" />
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Section: Pagination and Actions -->
+    <div class="border-t border-slate-800 bg-slate-900 px-4 py-4">
+      <!-- Pagination Buttons -->
+      <div
+        v-if="store.photos.length > 0"
+        class="mb-4 flex gap-2 overflow-x-auto pb-1"
+      >
+        <button
+          v-for="(photo, index) in store.photos"
+          :key="photo.id"
+          class="flex h-8 min-w-[40px] shrink-0 items-center justify-center rounded-lg border text-sm font-medium transition-colors"
+          :class="
+            index === store.currentPhotoIndex
+              ? 'border-green-500 bg-green-500/10 text-green-400'
+              : 'border-slate-600 bg-slate-800 text-slate-300 hover:border-slate-500'
+          "
+          @click="handlePhotoSelected(index)"
+        >
+          {{ index + 1 }}
+        </button>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center justify-center gap-4">
+        <!-- Chat Button -->
+        <button
+          class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700"
+          @click="handleChat"
+        >
+          <span class="pi pi-comments text-lg" />
+        </button>
+
+        <!-- Microphone Button -->
+        <button
+          class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700"
+          :class="micOn ? 'bg-green-500/20 text-green-400' : ''"
+          @click="handleToggleMic"
+        >
+          <span
+            :class="[
+              'text-lg',
+              micOn ? 'pi pi-microphone' : 'pi pi-volume-off',
+            ]"
+          />
+        </button>
+
+        <!-- Camera Button -->
+        <button
+          class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700"
+          :class="cameraOn ? 'bg-green-500/20 text-green-400' : ''"
+          @click="handleToggleCamera"
+        >
+          <span
+            :class="[
+              'text-lg',
+              cameraOn ? 'pi pi-video' : 'pi pi-eye-slash',
+            ]"
+          />
+        </button>
+
+        <!-- End Call Button -->
+        <button
+          class="flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white transition-colors hover:bg-red-700"
+          @click="handleEndCall"
+        >
+          <span class="pi pi-times text-lg" />
+        </button>
+      </div>
+    </div>
+
+    <!-- Error Message -->
     <Message
       v-if="store.errorMessage"
       severity="error"
-      class="mt-1 text-xs"
+      class="mx-4 mb-4 text-xs"
     >
       {{ store.errorMessage }}
     </Message>

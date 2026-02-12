@@ -19,6 +19,8 @@ interface MeetupState {
   errorMessage: string | null
   virtualBackgroundMode: 'none' | 'blur' | 'image'
   virtualBackgroundImageUrl: string | null
+  preferredCameraOn: boolean
+  preferredMicOn: boolean
 }
 
 export const useMeetupStore = defineStore('meetup', {
@@ -35,6 +37,8 @@ export const useMeetupStore = defineStore('meetup', {
     errorMessage: null,
     virtualBackgroundMode: 'none',
     virtualBackgroundImageUrl: null,
+    preferredCameraOn: true,
+    preferredMicOn: true,
   }),
 
   getters: {
@@ -52,6 +56,14 @@ export const useMeetupStore = defineStore('meetup', {
   },
 
   actions: {
+    setPreferredCamera(on: boolean) {
+      this.preferredCameraOn = on
+    },
+
+    setPreferredMic(on: boolean) {
+      this.preferredMicOn = on
+    },
+
     setError(message: string | null) {
       this.errorMessage = message
     },

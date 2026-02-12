@@ -30,8 +30,8 @@ const store = useMeetupStore()
 const isLoading = ref(true)
 const isPreviewLoading = ref(false)
 const localErrorMessage = ref<string | null>(null)
-const cameraOn = ref(true)
-const micOn = ref(true)
+const cameraOn = ref(store.preferredCameraOn ?? true)
+const micOn = ref(store.preferredMicOn ?? true)
 const videoElementRef = ref<HTMLVideoElement | null>(null)
 const previewUnsubscribers = ref<Array<() => void>>([])
 
@@ -118,18 +118,21 @@ async function startHmsPreview() {
     // Get initial state from HMS store after preview starts
     const initialVideoEnabled = hmsStore.getState(selectIsLocalVideoEnabled)
     const initialAudioEnabled = hmsStore.getState(selectIsLocalAudioEnabled)
-    
-    // Update local state to match HMS state
-    cameraOn.value = initialVideoEnabled ?? true // Default to true if not set
-    micOn.value = initialAudioEnabled ?? true // Default to true if not set
 
-    // Set video/audio state to desired initial state
-    if (cameraOn.value) {
-      await setLocalVideoEnabled(true)
-    }
-    if (micOn.value) {
-      await setLocalAudioEnabled(true)
-    }
+    const preferredCameraOn = store.preferredCameraOn ?? true
+    const preferredMicOn = store.preferredMicOn ?? true
+
+    // Update local state to match HMS state or stored preference
+    cameraOn.value = initialVideoEnabled ?? preferredCameraOn
+    micOn.value = initialAudioEnabled ?? preferredMicOn
+
+    // Persist preferences
+    store.setPreferredCamera(cameraOn.value)
+    store.setPreferredMic(micOn.value)
+
+    // Apply desired initial media state to HMS
+    await setLocalVideoEnabled(cameraOn.value)
+    await setLocalAudioEnabled(micOn.value)
 
     // Wait for video element to be available and track to be ready
     // The subscription will handle attachment when track becomes available
@@ -213,9 +216,10 @@ async function handleToggleCamera() {
     const currentState = cameraOn.value
     const nextState = !currentState
     
-    // Optimistically update UI for better UX
+    // Optimistically update UI and store preference for better UX
     cameraOn.value = nextState
-    
+    store.setPreferredCamera(nextState)
+
     // Call HMS action to toggle video
     await setLocalVideoEnabled(nextState)
     
@@ -239,9 +243,10 @@ async function handleToggleMic() {
     const currentState = micOn.value
     const nextState = !currentState
     
-    // Optimistically update UI for better UX
+    // Optimistically update UI and store preference for better UX
     micOn.value = nextState
-    
+    store.setPreferredMic(nextState)
+
     // Call HMS action to toggle audio
     await setLocalAudioEnabled(nextState)
     

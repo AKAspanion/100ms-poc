@@ -61,7 +61,7 @@ async function handleJoinMeetup() {
 </script>
 
 <template>
-  <div class="flex h-full flex-col items-center justify-center py-10">
+  <div class="flex h-full flex-col items-center justify-center px-4 py-6">
     <Card class="w-full max-w-xl shadow-xl shadow-black/40">
       <template #title>
         <span class="text-lg font-semibold tracking-tight sm:text-xl">
@@ -76,7 +76,7 @@ async function handleJoinMeetup() {
       </template>
 
       <template #content>
-        <div class="mt-6 flex flex-col gap-3">
+        <div class="flex flex-col gap-3">
           <div class="flex flex-col gap-2">
             <label class="text-xs font-medium text-slate-300">Select User</label>
             <Dropdown
