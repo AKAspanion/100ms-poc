@@ -677,7 +677,7 @@
       <div class="relative flex h-full w-full items-center">
         <div
           v-if="!store.photos.length"
-          class="flex min-h-100 items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-center"
+          class="flex h-full w-full min-h-100 items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-center"
         >
           <div class="space-y-2">
             <p class="text-lg font-semibold text-slate-300">PHOTO DISPLAY</p>
