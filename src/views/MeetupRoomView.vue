@@ -20,6 +20,8 @@
     selectIsLocalVideoEnabled,
     selectIsLocalAudioEnabled,
     selectTrackByID,
+    selectLocalVideoTrackID,
+    selectLocalPeer,
   } from '@100mslive/hms-video-store';
   import type { HMSPeer } from '@100mslive/hms-video-store';
 
@@ -38,6 +40,8 @@
   let unsubscribePeers: (() => void) | null = null;
   let unsubscribeVideoState: (() => void) | null = null;
   let unsubscribeAudioState: (() => void) | null = null;
+  let unsubscribeLocalVideoTrack: (() => void) | null = null;
+  let unsubscribeLocalPeer: (() => void) | null = null;
   const trackUnsubscribers = ref<Map<string, () => void>>(new Map());
   const trackUpdateTrigger = ref(0); // Used to force reactivity updates
   const isInitialized = ref(false);
@@ -226,9 +230,28 @@
   }
 
   function isPeerMicOn(peer: HMSPeer): boolean {
-    // Local peer uses reactive micOn state
+    // For local peer, check if audio track actually exists
     if (peer.isLocal) {
-      return micOn.value;
+      const hmsStore = getHmsStore();
+      if (!hmsStore) {
+        return micOn.value;
+      }
+
+      // Check if audio is enabled AND track exists
+      const audioEnabled = micOn.value;
+      if (!audioEnabled) {
+        return false;
+      }
+
+      // Check if audio track actually exists
+      const localPeer = hmsStore.getState(selectLocalPeer);
+      const audioTrack = localPeer?.audioTrack;
+      if (audioTrack) {
+        return true;
+      }
+
+      // Track might not be available yet
+      return false;
     }
 
     const hmsStore = getHmsStore();
@@ -259,9 +282,29 @@
   }
 
   function isPeerVideoOn(peer: HMSPeer): boolean {
-    // Local peer uses reactive cameraOn state
+    // For local peer, check if video track actually exists
     if (peer.isLocal) {
-      return cameraOn.value;
+      const hmsStore = getHmsStore();
+      if (!hmsStore) {
+        return cameraOn.value;
+      }
+
+      // Check if video is enabled AND track exists
+      const videoEnabled = cameraOn.value;
+      if (!videoEnabled) {
+        return false;
+      }
+
+      // Check if video track actually exists
+      const localPeer = hmsStore.getState(selectLocalPeer);
+      const videoTrack = localPeer?.videoTrack;
+      if (videoTrack) {
+        return true;
+      }
+
+      // Fallback to track ID check
+      const videoTrackID = hmsStore.getState(selectLocalVideoTrackID);
+      return Boolean(videoTrackID);
     }
 
     const hmsStore = getHmsStore();
@@ -360,22 +403,82 @@
 
     // Subscribe to video enabled state
     unsubscribeVideoState = hmsStore.subscribe((enabled: boolean) => {
-      cameraOn.value = enabled;
+      // Only update cameraOn if video is disabled, or if enabled AND track exists
+      if (!enabled) {
+        cameraOn.value = false;
+      } else {
+        // Check if track exists before setting to true
+        const localPeer = hmsStore.getState(selectLocalPeer);
+        const videoTrack = localPeer?.videoTrack;
+        const videoTrackID = hmsStore.getState(selectLocalVideoTrackID);
+        if (videoTrack || videoTrackID) {
+          cameraOn.value = true;
+        }
+      }
     }, selectIsLocalVideoEnabled);
+
+    // Subscribe to local video track ID changes to update cameraOn when track becomes available
+    unsubscribeLocalVideoTrack = hmsStore.subscribe((trackID: string | undefined) => {
+      const videoEnabled = hmsStore.getState(selectIsLocalVideoEnabled);
+      // Only update cameraOn to true if video is enabled AND track exists
+      if (videoEnabled && trackID) {
+        cameraOn.value = true;
+      } else if (!trackID) {
+        // Track removed, set to false if video was supposed to be on
+        if (videoEnabled) {
+          cameraOn.value = false;
+        }
+      }
+      // Trigger reactivity update
+      trackUpdateTrigger.value++;
+    }, selectLocalVideoTrackID);
 
     // Subscribe to audio enabled state
     unsubscribeAudioState = hmsStore.subscribe((enabled: boolean) => {
-      micOn.value = enabled;
+      // Only update micOn if audio is disabled, or if enabled AND track exists
+      if (!enabled) {
+        micOn.value = false;
+      } else {
+        // Check if track exists before setting to true
+        const localPeer = hmsStore.getState(selectLocalPeer);
+        const audioTrack = localPeer?.audioTrack;
+        if (audioTrack) {
+          micOn.value = true;
+        }
+      }
     }, selectIsLocalAudioEnabled);
+
+    // Subscribe to local peer changes to detect when audio track becomes available
+    unsubscribeLocalPeer = hmsStore.subscribe((localPeer: HMSPeer | undefined) => {
+      const audioEnabled = hmsStore.getState(selectIsLocalAudioEnabled);
+      // Only update micOn to true if audio is enabled AND track exists
+      if (audioEnabled && localPeer?.audioTrack) {
+        micOn.value = true;
+      } else if (!localPeer?.audioTrack) {
+        // Track removed, set to false if audio was supposed to be on
+        if (audioEnabled) {
+          micOn.value = false;
+        }
+      }
+      // Trigger reactivity update
+      trackUpdateTrigger.value++;
+    }, selectLocalPeer);
 
     // Get initial state
     const initialVideoEnabled = hmsStore.getState(selectIsLocalVideoEnabled);
     const initialAudioEnabled = hmsStore.getState(selectIsLocalAudioEnabled);
     if (initialVideoEnabled !== undefined) {
-      cameraOn.value = initialVideoEnabled;
+      // Check if track exists before setting initial state
+      const localPeer = hmsStore.getState(selectLocalPeer);
+      const videoTrack = localPeer?.videoTrack;
+      const videoTrackID = hmsStore.getState(selectLocalVideoTrackID);
+      cameraOn.value = initialVideoEnabled && (Boolean(videoTrack) || Boolean(videoTrackID));
     }
     if (initialAudioEnabled !== undefined) {
-      micOn.value = initialAudioEnabled;
+      // Check if track exists before setting initial state
+      const localPeer = hmsStore.getState(selectLocalPeer);
+      const audioTrack = localPeer?.audioTrack;
+      micOn.value = initialAudioEnabled && Boolean(audioTrack);
     }
 
     // Get initial peers
@@ -511,14 +614,24 @@
       const currentState = cameraOn.value;
       const nextState = !currentState;
 
-      // Optimistically update UI for better UX
-      cameraOn.value = nextState;
+      // If turning video OFF, update immediately
+      if (!nextState) {
+        cameraOn.value = false;
+      }
+      // If turning video ON, don't update immediately - wait for track to be available
+      // The subscription to local video track will update cameraOn.value when track is found
 
       // Call HMS action to toggle video
       await setLocalVideoEnabled(nextState);
     } catch (error) {
-      // Revert optimistic update on error
-      cameraOn.value = !cameraOn.value;
+      // Revert state on error
+      const hmsStore = getHmsStore();
+      if (hmsStore) {
+        const videoEnabled = hmsStore.getState(selectIsLocalVideoEnabled);
+        cameraOn.value = videoEnabled ?? !cameraOn.value;
+      } else {
+        cameraOn.value = !cameraOn.value;
+      }
 
       console.error('[MeetupRoomView] Failed to toggle camera:', error);
     }
@@ -529,14 +642,24 @@
       const currentState = micOn.value;
       const nextState = !currentState;
 
-      // Optimistically update UI for better UX
-      micOn.value = nextState;
+      // If turning audio OFF, update immediately
+      if (!nextState) {
+        micOn.value = false;
+      }
+      // If turning audio ON, don't update immediately - wait for track to be available
+      // The subscription to local peer will update micOn.value when track is found
 
       // Call HMS action to toggle audio
       await setLocalAudioEnabled(nextState);
     } catch (error) {
-      // Revert optimistic update on error
-      micOn.value = !micOn.value;
+      // Revert state on error
+      const hmsStore = getHmsStore();
+      if (hmsStore) {
+        const audioEnabled = hmsStore.getState(selectIsLocalAudioEnabled);
+        micOn.value = audioEnabled ?? !micOn.value;
+      } else {
+        micOn.value = !micOn.value;
+      }
 
       console.error('[MeetupRoomView] Failed to toggle mic:', error);
     }
@@ -588,6 +711,16 @@
     }
     if (unsubscribeAudioState) {
       unsubscribeAudioState();
+    }
+
+    // Clean up local video track subscription
+    if (unsubscribeLocalVideoTrack) {
+      unsubscribeLocalVideoTrack();
+    }
+
+    // Clean up local peer subscription
+    if (unsubscribeLocalPeer) {
+      unsubscribeLocalPeer();
     }
 
     // Clean up all track subscriptions
