@@ -1,7 +1,9 @@
+import type { User } from '../types.js';
+
 // Demo users with host and guest types
 export const MOCK_MEETUP_ID = 'demo-meetup';
 
-const users = new Map([
+const users = new Map<string, User>([
   [
     'demo-user-1',
     {

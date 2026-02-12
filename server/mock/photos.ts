@@ -1,6 +1,8 @@
+import type { Photo } from '../types.js';
+
 export const MOCK_ALBUM_ID = 'demo-album';
 
-export const PHOTOS = [
+export const PHOTOS: Photo[] = [
   {
     id: 'photo-1',
     albumId: MOCK_ALBUM_ID,
@@ -111,6 +113,6 @@ export const PHOTOS = [
   },
 ];
 
-export function getPhotosForAlbum(albumId = MOCK_ALBUM_ID) {
+export function getPhotosForAlbum(albumId: string = MOCK_ALBUM_ID): Photo[] {
   return PHOTOS.filter((photo) => photo.albumId === albumId);
 }

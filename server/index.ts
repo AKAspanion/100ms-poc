@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
@@ -16,6 +16,12 @@ import {
 } from './lib/jsonDb.js';
 import { users, MOCK_MEETUP_ID } from './mock/users.js';
 import { getPhotosForAlbum, MOCK_ALBUM_ID } from './mock/photos.js';
+import type {
+  Meetup,
+  PhotoEventRequestBody,
+  HmsRoomResponse,
+  HmsTokenPayload,
+} from './types.js';
 
 // Resolve __dirname in ESM so we can load server/.env
 const __filename = fileURLToPath(import.meta.url);
@@ -36,13 +42,13 @@ app.use(cors());
 app.use(express.json());
 
 // Simple request logger
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next) => {
   const start = Date.now();
   const { method, originalUrl } = req;
 
   res.on('finish', () => {
     const duration = Date.now() - start;
-     
+
     console.log(
       JSON.stringify({
         level: 'info',
@@ -62,14 +68,14 @@ app.use((req, res, next) => {
 // In-memory demo data – replace with real persistence later.
 // ---------------------------------------------------------------------------
 
-function getOrCreateMeetup(meetupId) {
+function getOrCreateMeetup(meetupId: string): Meetup {
   const existing = getMeetupById(meetupId);
   if (existing) {
     return existing;
   }
 
   const id = meetupId || MOCK_MEETUP_ID;
-  const meetup = {
+  const meetup: Meetup = {
     id,
     title: 'Memories with Nanny',
     albumId: MOCK_ALBUM_ID,
@@ -87,7 +93,7 @@ function getOrCreateMeetup(meetupId) {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function generate100msToken(userId, roomId, role) {
+function generate100msToken(userId: string, roomId: string, role: string): string {
   const accessKey = process.env.HMS_ACCESS_KEY;
   const appSecret = process.env.HMS_APP_SECRET;
 
@@ -95,7 +101,7 @@ function generate100msToken(userId, roomId, role) {
     throw new Error('Missing HMS_ACCESS_KEY or HMS_APP_SECRET – cannot generate 100ms token');
   }
 
-  const payload = {
+  const payload: HmsTokenPayload = {
     access_key: accessKey,
     room_id: roomId,
     user_id: userId,
@@ -117,7 +123,7 @@ function generate100msToken(userId, roomId, role) {
 // 100ms room creation – called when a meetup is scheduled
 // ---------------------------------------------------------------------------
 
-async function ensureHmsRoomForMeetup(meetup) {
+async function ensureHmsRoomForMeetup(meetup: Meetup): Promise<string> {
   // If a room is already associated, just reuse it.
   if (meetup.videoRoomId) {
     return meetup.videoRoomId;
@@ -151,7 +157,7 @@ async function ensureHmsRoomForMeetup(meetup) {
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => '');
-     
+
     console.error(
       JSON.stringify({
         level: 'error',
@@ -164,7 +170,7 @@ async function ensureHmsRoomForMeetup(meetup) {
     throw new Error('Failed to create 100ms room');
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as HmsRoomResponse;
 
   // 100ms returns "id" as the room identifier.
   const roomId = data.id || data.room_id;
@@ -181,16 +187,16 @@ async function ensureHmsRoomForMeetup(meetup) {
 // Routes
 // ---------------------------------------------------------------------------
 
-function getCurrentUser(req) {
+function getCurrentUser(req: Request) {
   // Get userId from query parameter
-  const userId = req.query.userId || req.query.user_id;
+  const userId = (req.query.userId as string) || (req.query.user_id as string);
   if (!userId) {
     return null;
   }
   return users.get(userId) || null;
 }
 
-function getUserRoleForMeetup(user, meetupId) {
+function getUserRoleForMeetup(user: ReturnType<typeof getCurrentUser>, meetupId: string) {
   if (!user || !user.rolesByMeetup) {
     return null;
   }
@@ -199,15 +205,15 @@ function getUserRoleForMeetup(user, meetupId) {
 
 // ---------------------------------------------------------------------------
 
-app.get('/meetups/:id', (req, res) => {
-  const meetupId = req.params.id;
+app.get('/meetups/:id', (req: Request, res: Response) => {
+  const meetupId = req.params.id as string;
   const meetup = getOrCreateMeetup(meetupId);
   res.json(meetup);
 });
 
 // Meetup scheduling – create a 100ms room using a template
-app.post('/meetups/:id/schedule', async (req, res) => {
-  const meetupId = req.params.id;
+app.post('/meetups/:id/schedule', async (req: Request, res: Response) => {
+  const meetupId = req.params.id as string;
   const meetup = getOrCreateMeetup(meetupId);
 
   try {
@@ -218,15 +224,16 @@ app.post('/meetups/:id/schedule', async (req, res) => {
       video_room_id: videoRoomId,
     });
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to schedule meetup and create room';
     res.status(500).json({
-      error: (error && error.message) || 'Failed to schedule meetup and create room',
+      error: errorMessage,
     });
   }
 });
 
 // Auth token – verify user & invite, then generate 100ms access token
-app.get('/meetups/:id/auth-token', async (req, res) => {
-  const meetupId = req.params.id;
+app.get('/meetups/:id/auth-token', async (req: Request, res: Response) => {
+  const meetupId = req.params.id as string;
   getOrCreateMeetup(meetupId);
 
   const user = getCurrentUser(req);
@@ -258,19 +265,18 @@ app.get('/meetups/:id/auth-token', async (req, res) => {
       role,
     });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ error: (error && error.message) || 'Failed to generate 100ms token' });
+    const errorMessage = error instanceof Error ? error.message : 'Failed to generate 100ms token';
+    return res.status(500).json({ error: errorMessage });
   }
 });
 
-app.get('/albums/:id/photos', (req, res) => {
-  const albumId = req.params.id || MOCK_ALBUM_ID;
+app.get('/albums/:id/photos', (req: Request, res: Response) => {
+  const albumId = (req.params.id as string) || MOCK_ALBUM_ID;
   res.json(getPhotosForAlbum(albumId));
 });
 
-app.post('/meetups/:id/session', (req, res) => {
-  const meetupId = req.params.id;
+app.post('/meetups/:id/session', (req: Request, res: Response) => {
+  const meetupId = req.params.id as string;
   const sessionId = uuidv4();
   const recordingStartTimestampMs = Date.now();
 
@@ -288,9 +294,10 @@ app.post('/meetups/:id/session', (req, res) => {
   });
 });
 
-app.post('/meetups/:id/photo-events', (req, res) => {
-  const meetupId = req.params.id;
-  const { session_id, photo_id, photo_index, timestamp_ms, navigator_user_id } = req.body;
+app.post('/meetups/:id/photo-events', (req: Request, res: Response) => {
+  const meetupId = req.params.id as string;
+  const { session_id, photo_id, photo_index, timestamp_ms, navigator_user_id } =
+    req.body as PhotoEventRequestBody;
 
   const sessionId = session_id;
 
@@ -311,7 +318,6 @@ app.post('/meetups/:id/photo-events', (req, res) => {
 
   appendPhotoEventRecord(sessionId, event);
 
-   
   console.log(
     JSON.stringify({
       level: 'info',
@@ -324,8 +330,8 @@ app.post('/meetups/:id/photo-events', (req, res) => {
   res.status(204).end();
 });
 
-app.get('/meetups/:id/session/current', (req, res) => {
-  const meetupId = req.params.id;
+app.get('/meetups/:id/session/current', (req: Request, res: Response) => {
+  const meetupId = req.params.id as string;
 
   // Find the most recent session for this meetup.
   const [latestSession] = getAllSessions()
@@ -346,8 +352,8 @@ app.get('/meetups/:id/session/current', (req, res) => {
   res.json({ currentPhotoIndex: lastEvent.photoIndex ?? 0 });
 });
 
-app.get('/meetups/:id/summary', (req, res) => {
-  const meetupId = req.params.id;
+app.get('/meetups/:id/summary', (req: Request, res: Response) => {
+  const meetupId = req.params.id as string;
   const meetup = getOrCreateMeetup(meetupId);
 
   res.json({
@@ -373,8 +379,8 @@ app.get('/meetups/:id/summary', (req, res) => {
   });
 });
 
-app.get('/photos/:id/meetup-clips', (req, res) => {
-  const photoId = req.params.id;
+app.get('/photos/:id/meetup-clips', (req: Request, res: Response) => {
+  const photoId = req.params.id as string;
   const meetup = getOrCreateMeetup(MOCK_MEETUP_ID);
 
   res.json({
@@ -390,11 +396,11 @@ app.get('/photos/:id/meetup-clips', (req, res) => {
           sentences: [
             {
               speaker: 'Bill',
-              text: 'You know, I remember this day. We went to Sanibel Island right after Dad’s birthday.',
+              text: "You know, I remember this day. We went to Sanibel Island right after Dad's birthday.",
             },
             {
               speaker: 'Dena',
-              text: 'That’s right! And Mom made her famous crab cakes. Remember how Uncle Joe ate like six of them?',
+              text: "That's right! And Mom made her famous crab cakes. Remember how Uncle Joe ate like six of them?",
             },
           ],
         },
@@ -405,12 +411,11 @@ app.get('/photos/:id/meetup-clips', (req, res) => {
   });
 });
 
-app.get('/', (_req, res) => {
+app.get('/', (_req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Memrico Meetups demo API' });
 });
 
 app.listen(PORT, () => {
-   
   console.log(
     JSON.stringify({
       level: 'info',

@@ -1,5 +1,6 @@
-/** @type {import('prettier').Config} */
-module.exports = {
+import type { Config } from 'prettier';
+
+const config: Config = {
   printWidth: 100,
   singleQuote: true,
   trailingComma: 'all',
@@ -9,3 +10,5 @@ module.exports = {
   arrowParens: 'always',
   vueIndentScriptAndStyle: true,
 };
+
+export default config;

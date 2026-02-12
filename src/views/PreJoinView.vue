@@ -92,7 +92,7 @@
               videoElementRef.value.srcObject = null;
             }
           }
-        }, selectLocalVideoTrackID as any);
+        }, selectLocalVideoTrackID);
 
         previewUnsubscribers.value.push(unsubscribeTrack);
       }

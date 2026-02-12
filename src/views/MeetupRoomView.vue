@@ -98,8 +98,8 @@
 
     // Sort peers by joinedAt if available (oldest first)
     const sortedPeers = [...peers].sort((a, b) => {
-      const aJoined: any = (a as any).joinedAt;
-      const bJoined: any = (b as any).joinedAt;
+      const aJoined = (a as { joinedAt?: number | string }).joinedAt;
+      const bJoined = (b as { joinedAt?: number | string }).joinedAt;
 
       if (!aJoined && !bJoined) {
         return 0;
@@ -218,15 +218,16 @@
 
     const hmsStore = getHmsStore();
     if (!hmsStore) {
-      return Boolean((peer as any).audioTrack);
+      const fallbackTrackId = (peer as { audioTrack?: string }).audioTrack;
+      return Boolean(fallbackTrackId);
     }
 
-    const trackId = (peer as any).audioTrack as string | undefined;
+    const trackId = (peer as { audioTrack?: string }).audioTrack;
     if (!trackId) {
       return false;
     }
 
-    const track: any = hmsStore.getState(selectTrackByID(trackId));
+    const track = hmsStore.getState(selectTrackByID(trackId));
     if (!track) {
       return false;
     }
@@ -247,15 +248,16 @@
 
     const hmsStore = getHmsStore();
     if (!hmsStore) {
-      return Boolean((peer as any).videoTrack);
+      const fallbackTrackId = (peer as { videoTrack?: string }).videoTrack;
+      return Boolean(fallbackTrackId);
     }
 
-    const trackId = (peer as any).videoTrack as string | undefined;
+    const trackId = (peer as { videoTrack?: string }).videoTrack;
     if (!trackId) {
       return false;
     }
 
-    const track: any = hmsStore.getState(selectTrackByID(trackId));
+    const track = hmsStore.getState(selectTrackByID(trackId));
     if (!track) {
       return false;
     }
