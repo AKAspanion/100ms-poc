@@ -4,13 +4,7 @@ import type {
   MeetupDetail,
   Photo,
 } from '../api/types'
-import {
-  getAlbumPhotos,
-  getCurrentSessionState,
-  getMeetup,
-  getMeetupAuthToken,
-  startMeetupSession,
-} from '../api/client'
+import { getAlbumPhotos, getCurrentSessionState, getMeetup, startMeetupSession } from '../api/client'
 
 interface MeetupState {
   currentMeetup: MeetupDetail | null
@@ -23,6 +17,8 @@ interface MeetupState {
   currentUserId: string | null
   isLoading: boolean
   errorMessage: string | null
+  virtualBackgroundMode: 'none' | 'blur' | 'image'
+  virtualBackgroundImageUrl: string | null
 }
 
 export const useMeetupStore = defineStore('meetup', {
@@ -37,6 +33,8 @@ export const useMeetupStore = defineStore('meetup', {
     currentUserId: null,
     isLoading: false,
     errorMessage: null,
+    virtualBackgroundMode: 'none',
+    virtualBackgroundImageUrl: null,
   }),
 
   getters: {
@@ -68,6 +66,11 @@ export const useMeetupStore = defineStore('meetup', {
       this.currentPhotoIndex = clampedIndex
     },
 
+    setVirtualBackground(mode: 'none' | 'blur' | 'image', imageUrl?: string | null) {
+      this.virtualBackgroundMode = mode
+      this.virtualBackgroundImageUrl = mode === 'image' ? imageUrl ?? this.virtualBackgroundImageUrl : null
+    },
+
     async loadMeetup(meetupId: string) {
       this.isLoading = true
       this.errorMessage = null
@@ -78,18 +81,6 @@ export const useMeetupStore = defineStore('meetup', {
         this.errorMessage = (error as Error).message || 'Failed to load meetup.'
       } finally {
         this.isLoading = false
-      }
-    },
-
-    async loadAuthToken(meetupId: string) {
-      try {
-        const response = await getMeetupAuthToken(meetupId)
-        this.hmsAuthToken = response.token
-        this.currentUserName = response.userName
-        this.currentUserId = response.userId
-      } catch (error) {
-        // In mock mode this should never fail; in real mode surface a soft error.
-        this.errorMessage = (error as Error).message || 'Failed to get video token.'
       }
     },
 

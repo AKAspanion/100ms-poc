@@ -28,6 +28,7 @@ const PORT = process.env.PORT || 4000
 const HMS_API_BASE_URL = process.env.HMS_API_BASE_URL || 'https://api.100ms.live'
 const HMS_TEMPLATE_ID = process.env.HMS_TEMPLATE_ID
 const HMS_MANAGEMENT_TOKEN = process.env.HMS_MANAGEMENT_TOKEN
+const HMS_ROOM_ID = process.env.HMS_ROOM_ID
 
 app.use(cors())
 app.use(express.json())
@@ -130,8 +131,7 @@ function generate100msToken(userId, roomId, role) {
   const appSecret = process.env.HMS_APP_SECRET
 
   if (!accessKey || !appSecret) {
-    // Fallback for local development without 100ms credentials.
-    return `mock-token-for-room-${roomId}-user-${userId}-role-${role}`
+    throw new Error('Missing HMS_ACCESS_KEY or HMS_APP_SECRET – cannot generate 100ms token')
   }
 
   const payload = {
@@ -162,11 +162,11 @@ async function ensureHmsRoomForMeetup(meetup) {
     return meetup.videoRoomId
   }
 
-  // If management configuration is missing, fall back to a deterministic ID.
+  // If management configuration is missing, fail fast instead of using a fake room ID.
   if (!HMS_TEMPLATE_ID || !HMS_MANAGEMENT_TOKEN) {
-    const fallbackRoomId = process.env.HMS_ROOM_ID || `meetup-${meetup.id}`
-    meetup.videoRoomId = fallbackRoomId
-    return fallbackRoomId
+    throw new Error(
+      'Missing HMS_TEMPLATE_ID or HMS_MANAGEMENT_TOKEN – cannot ensure 100ms room for meetup',
+    )
   }
 
   const url = `${HMS_API_BASE_URL}/v2/rooms`
@@ -263,7 +263,7 @@ app.post('/meetups/:id/schedule', async (req, res) => {
 // Auth token – verify user & invite, then generate 100ms access token
 app.get('/meetups/:id/auth-token', async (req, res) => {
   const meetupId = req.params.id
-  const meetup = getOrCreateMeetup(meetupId)
+  getOrCreateMeetup(meetupId)
 
   const user = getCurrentUser(req)
   if (!user) {
@@ -277,23 +277,25 @@ app.get('/meetups/:id/auth-token', async (req, res) => {
     return res.status(403).json({ error: 'User is not invited to this meetup' })
   }
 
+  if (!HMS_ROOM_ID) {
+    return res
+      .status(500)
+      .json({ error: 'HMS_ROOM_ID is not configured on the server' })
+  }
+
   try {
-    // Ensure a 100ms room exists for this meetup. This normally happens when the
-    // meetup is scheduled, but we guard it here as well.
-    await ensureHmsRoomForMeetup(meetup)
+    const token = generate100msToken(user.id, HMS_ROOM_ID, role)
+
+    res.json({
+      token,
+      userName: user.name,
+      userId: user.id,
+    })
   } catch (error) {
     return res
       .status(500)
-      .json({ error: (error && error.message) || 'Failed to prepare video room' })
+      .json({ error: (error && error.message) || 'Failed to generate 100ms token' })
   }
-
-  const token = generate100msToken(user.id, meetup.videoRoomId, role)
-
-  res.json({
-    token,
-    userName: user.name,
-    userId: user.id,
-  })
 })
 
 app.get('/albums/:id/photos', (req, res) => {

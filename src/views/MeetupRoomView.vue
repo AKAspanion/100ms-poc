@@ -33,10 +33,7 @@ async function initialiseMeetup() {
 
   try {
     await store.loadMeetup(meetupId.value)
-    await Promise.all([
-      store.loadAuthToken(meetupId.value),
-      store.startSession(meetupId.value),
-    ])
+    await store.startSession(meetupId.value)
     await store.loadPhotos()
     await store.loadCurrentSessionState(meetupId.value)
 
@@ -44,6 +41,8 @@ async function initialiseMeetup() {
       await joinMeetupRoom({
         authToken: store.hmsAuthToken,
         userName: store.currentUserName,
+        virtualBackgroundMode: store.virtualBackgroundMode,
+        virtualBackgroundImageUrl: store.virtualBackgroundImageUrl ?? undefined,
       })
 
       unsubscribePhotoSync = subscribeToPhotoSync((message) => {

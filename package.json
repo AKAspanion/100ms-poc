@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@100mslive/hms-video-store": "^0.13.2",
+    "@100mslive/hms-virtual-background": "^1.14.2",
     "cors": "^2.8.6",
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
@@ -28,8 +29,8 @@
     "@types/node": "^24.10.1",
     "@vitejs/plugin-vue": "^6.0.2",
     "@vue/tsconfig": "^0.8.1",
-    "postcss": "^8.5.6",
     "nodemon": "^3.1.9",
+    "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
     "typescript": "~5.9.3",
     "vite": "^7.3.1",

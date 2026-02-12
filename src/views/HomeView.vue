@@ -6,11 +6,13 @@ import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
 import { getMeetupAuthToken } from '../api/client'
+import { useMeetupStore } from '../stores/meetupStore'
 
 const router = useRouter()
 const meetupIdInput = ref('demo-meetup')
 const isJoining = ref(false)
 const joinErrorMessage = ref<string | null>(null)
+const meetupStore = useMeetupStore()
 
 async function handleJoinMeetup() {
   const trimmed = meetupIdInput.value.trim()
@@ -24,9 +26,12 @@ async function handleJoinMeetup() {
   isJoining.value = true
 
   try {
-    // Verify the user is logged in and invited for this meetup.
-    // This also pre-generates a 100ms JWT token on the backend.
-    await getMeetupAuthToken(trimmed)
+    // Verify the user is logged in and invited for this meetup, and get a 100ms JWT.
+    const response = await getMeetupAuthToken(trimmed)
+
+    meetupStore.hmsAuthToken = response.token
+    meetupStore.currentUserName = response.userName
+    meetupStore.currentUserId = response.userId
 
     router.push({ name: 'meetup', params: { meetupId: trimmed } })
   } catch (error) {
