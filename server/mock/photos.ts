@@ -111,6 +111,78 @@ export const PHOTOS: Photo[] = [
     title: 'Family memory #12',
     index: 11,
   },
+  {
+    id: 'photo-13',
+    albumId: MOCK_ALBUM_ID,
+    url: 'https://images.pexels.com/photos/1181244/pexels-photo-1181244.jpeg?auto=compress&cs=tinysrgb&w=1200&q=80',
+    thumbnailUrl:
+      'https://images.pexels.com/photos/1181244/pexels-photo-1181244.jpeg?auto=compress&cs=tinysrgb&w=300&q=80',
+    title: 'Family memory #13',
+    index: 12,
+  },
+  {
+    id: 'photo-14',
+    albumId: MOCK_ALBUM_ID,
+    url: 'https://images.pexels.com/photos/1267320/pexels-photo-1267320.jpeg?auto=compress&cs=tinysrgb&w=1200&q=80',
+    thumbnailUrl:
+      'https://images.pexels.com/photos/1267320/pexels-photo-1267320.jpeg?auto=compress&cs=tinysrgb&w=300&q=80',
+    title: 'Family memory #14',
+    index: 13,
+  },
+  {
+    id: 'photo-15',
+    albumId: MOCK_ALBUM_ID,
+    url: 'https://images.pexels.com/photos/1320686/pexels-photo-1320686.jpeg?auto=compress&cs=tinysrgb&w=1200&q=80',
+    thumbnailUrl:
+      'https://images.pexels.com/photos/1320686/pexels-photo-1320686.jpeg?auto=compress&cs=tinysrgb&w=300&q=80',
+    title: 'Family memory #15',
+    index: 14,
+  },
+  {
+    id: 'photo-16',
+    albumId: MOCK_ALBUM_ID,
+    url: 'https://images.pexels.com/photos/1402787/pexels-photo-1402787.jpeg?auto=compress&cs=tinysrgb&w=1200&q=80',
+    thumbnailUrl:
+      'https://images.pexels.com/photos/1402787/pexels-photo-1402787.jpeg?auto=compress&cs=tinysrgb&w=300&q=80',
+    title: 'Family memory #16',
+    index: 15,
+  },
+  {
+    id: 'photo-17',
+    albumId: MOCK_ALBUM_ID,
+    url: 'https://images.pexels.com/photos/1543793/pexels-photo-1543793.jpeg?auto=compress&cs=tinysrgb&w=1200&q=80',
+    thumbnailUrl:
+      'https://images.pexels.com/photos/1543793/pexels-photo-1543793.jpeg?auto=compress&cs=tinysrgb&w=300&q=80',
+    title: 'Family memory #17',
+    index: 16,
+  },
+  {
+    id: 'photo-18',
+    albumId: MOCK_ALBUM_ID,
+    url: 'https://images.pexels.com/photos/1612351/pexels-photo-1612351.jpeg?auto=compress&cs=tinysrgb&w=1200&q=80',
+    thumbnailUrl:
+      'https://images.pexels.com/photos/1612351/pexels-photo-1612351.jpeg?auto=compress&cs=tinysrgb&w=300&q=80',
+    title: 'Family memory #18',
+    index: 17,
+  },
+  {
+    id: 'photo-19',
+    albumId: MOCK_ALBUM_ID,
+    url: 'https://images.pexels.com/photos/169198/pexels-photo-169198.jpeg?auto=compress&cs=tinysrgb&w=1200&q=80',
+    thumbnailUrl:
+      'https://images.pexels.com/photos/169198/pexels-photo-169198.jpeg?auto=compress&cs=tinysrgb&w=300&q=80',
+    title: 'Family memory #19',
+    index: 18,
+  },
+  {
+    id: 'photo-20',
+    albumId: MOCK_ALBUM_ID,
+    url: 'https://images.pexels.com/photos/1761279/pexels-photo-1761279.jpeg?auto=compress&cs=tinysrgb&w=1200&q=80',
+    thumbnailUrl:
+      'https://images.pexels.com/photos/1761279/pexels-photo-1761279.jpeg?auto=compress&cs=tinysrgb&w=300&q=80',
+    title: 'Family memory #20',
+    index: 19,
+  },
 ];
 
 export function getPhotosForAlbum(albumId: string = MOCK_ALBUM_ID): Photo[] {
