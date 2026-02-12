@@ -77,9 +77,12 @@
         previewUnsubscribers.value.push(unsubscribeVideo, unsubscribeAudio);
 
         // Subscribe to video track changes to re-attach if needed
-        const unsubscribeTrack = hmsStore.subscribe(async (trackID: string | null) => {
+        // Note: selectLocalVideoTrackID returns string | undefined, but we need string | null
+        const unsubscribeTrack = hmsStore.subscribe(async (trackID: string | undefined) => {
           if (videoElementRef.value) {
-            if (trackID) {
+            // Convert undefined to null for consistency
+            const trackId = trackID ?? null;
+            if (trackId) {
               // Track is available, attach it
               try {
                 await attachPreviewVideo(videoElementRef.value);
@@ -88,7 +91,7 @@
                 console.error('[PreJoinView] Failed to attach video track:', error);
               }
             } else {
-              // Track is null (video disabled), clear the video element
+              // Track is null/undefined (video disabled), clear the video element
               videoElementRef.value.srcObject = null;
             }
           }
