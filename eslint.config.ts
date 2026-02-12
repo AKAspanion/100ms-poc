@@ -4,7 +4,7 @@ import tseslint from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import tsParser from '@typescript-eslint/parser';
 
-export default [
+const config = [
   {
     ignores: ['dist', 'node_modules'],
   },
@@ -58,7 +58,7 @@ export default [
     },
   },
   {
-    files: ['postcss.config.cjs', 'prettier.config.cjs'],
+    files: ['postcss.config.ts', 'prettier.config.ts'],
     languageOptions: {
       globals: {
         module: 'readonly',
@@ -68,3 +68,5 @@ export default [
     },
   },
 ];
+
+export default config;
