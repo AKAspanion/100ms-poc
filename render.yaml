@@ -3,8 +3,9 @@ services:
     name: 100ms-poc-backend
     env: node
     plan: free
-    buildCommand: npm install
-    startCommand: npm run server:prod
+    rootDir: server
+    buildCommand: npm install --prefix ..
+    startCommand: npm run server:prod --prefix ..
     envVars:
       - key: NODE_ENV
         value: production
