@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
+import Button from 'primevue/button'
+import Message from 'primevue/message'
 import { useMeetupStore } from '../stores/meetupStore'
 import PhotoCarousel from '../components/PhotoCarousel.vue'
 import { logPhotoEvent } from '../api/client'
@@ -16,13 +18,17 @@ const meetupId = computed(() => (route.params.meetupId as string) || 'demo-meetu
 
 const store = useMeetupStore()
 
-const isInitializing = ref(true)
+const mockParticipants = [
+  { id: 'you', label: 'You', isActive: true },
+  { id: 'mom', label: 'Mom', isActive: false },
+  { id: 'dad', label: 'Dad', isActive: false },
+  { id: 'sister', label: 'Sister', isActive: false },
+  { id: 'brother', label: 'Brother', isActive: false },
+]
+
 let unsubscribePhotoSync: (() => void) | null = null
 
-const prebuiltUrl = computed(() => store.currentMeetup?.prebuiltUrl ?? '')
-
 async function initialiseMeetup() {
-  isInitializing.value = true
   store.setError(null)
 
   try {
@@ -48,8 +54,6 @@ async function initialiseMeetup() {
     store.setError(
       (error as Error).message || 'Something went wrong while loading the meetup.',
     )
-  } finally {
-    isInitializing.value = false
   }
 }
 
@@ -101,7 +105,7 @@ async function handlePhotoSelected(index: number) {
 }
 
 onMounted(() => {
-  initialiseMeetup()
+  void initialiseMeetup()
 })
 
 onUnmounted(() => {
@@ -115,68 +119,24 @@ onUnmounted(() => {
 
 <template>
   <div class="flex flex-col gap-4 pb-8">
-    <section class="space-y-1">
-      <p class="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-        Meetup
-      </p>
-      <h2 class="text-lg font-semibold tracking-tight sm:text-xl">
-        {{ store.currentMeetup?.title || 'Loading meetup…' }}
-      </h2>
-      <p
-        v-if="store.currentMeetup"
-        class="text-xs text-slate-400 sm:text-sm"
+    <div class="flex items-center gap-3 overflow-x-auto pb-1">
+      <Button
+        v-for="participant in mockParticipants"
+        :key="participant.id"
+        outlined
+        class="min-w-[130px] justify-start !border-slate-600 !bg-slate-900/80 text-left"
+        :class="participant.isActive ? '!border-teal-400' : ''"
       >
-        Album:
-        <span class="font-medium text-slate-100">
-          {{ store.currentMeetup.albumName }}
-        </span>
-      </p>
-    </section>
-
-    <section class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
-      <div
-        class="border-b border-slate-800 px-4 py-2 text-xs text-slate-400 sm:px-5 sm:py-3"
-      >
-        <span class="font-medium text-slate-100">
-          Live meetup room
-        </span>
-        <span class="mx-1 text-slate-600">
-          •
-        </span>
-        <span>
-          Powered by 100ms Prebuilt. Recording, chat, and summaries are handled by 100ms.
-        </span>
-      </div>
-
-      <div class="bg-black">
-        <div
-          v-if="isInitializing"
-          class="flex h-[50vh] items-center justify-center text-sm text-slate-400 sm:h-[60vh]"
-        >
-          Connecting to meetup…
+        <div class="flex flex-col items-start">
+          <span class="text-[11px] uppercase tracking-wide text-slate-400">
+            Video Feed
+          </span>
+          <span class="text-xs font-semibold text-slate-50">
+            {{ participant.label }}
+          </span>
         </div>
-
-        <div
-          v-else-if="prebuiltUrl"
-          class="h-[50vh] w-full sm:h-[60vh]"
-        >
-          <iframe
-            :src="prebuiltUrl"
-            title="Memrico Meetup"
-            allow="camera *; microphone *; display-capture *; autoplay; clipboard-write"
-            class="h-full w-full border-0"
-          />
-        </div>
-
-        <div
-          v-else
-          class="flex h-[50vh] items-center justify-center px-4 text-center text-sm text-slate-400 sm:h-[60vh]"
-        >
-          Prebuilt room URL is not configured. In a real environment this comes from the
-          Memrico backend.
-        </div>
-      </div>
-    </section>
+      </Button>
+    </div>
 
     <PhotoCarousel
       :photos="store.photos"
@@ -184,12 +144,14 @@ onUnmounted(() => {
       @photoSelected="handlePhotoSelected"
     />
 
-    <p
+    <Message
       v-if="store.errorMessage"
-      class="mt-1 text-xs text-rose-400"
+      severity="error"
+      class="mt-1 text-xs"
     >
       {{ store.errorMessage }}
-    </p>
+    </Message>
   </div>
 </template>
+
 
