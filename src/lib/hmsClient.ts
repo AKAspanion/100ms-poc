@@ -6,6 +6,14 @@ import {
 } from '@100mslive/hms-video-store';
 import { HMSVBPlugin, HMSVirtualBackgroundTypes } from '@100mslive/hms-virtual-background';
 
+type VirtualBackgroundSupport =
+  | {
+      isSupported?: boolean;
+      errMsg?: string;
+    }
+  | null
+  | undefined;
+
 // 100ms client-side helpers wired to HMSReactiveStore.
 let hmsStoreInstance: HMSReactiveStore | null = null;
 let hmsStore: ReturnType<HMSReactiveStore['getStore']> | null = null;
@@ -62,7 +70,7 @@ export async function applyVirtualBackground(options: {
         HMSVirtualBackgroundTypes.NONE,
       );
     } catch (error) {
-      // eslint-disable-next-line no-console
+       
       console.error('[100ms] remove virtual background failed', error);
     }
 
@@ -76,10 +84,10 @@ export async function applyVirtualBackground(options: {
     );
   }
 
-  const support = virtualBackgroundPlugin.checkSupport();
-  if (!support || (support as any).errMsg) {
-    // eslint-disable-next-line no-console
-    console.warn('[100ms] virtual background not supported:', (support as any)?.errMsg);
+  const support = virtualBackgroundPlugin.checkSupport() as VirtualBackgroundSupport;
+  if (!support || support.errMsg) {
+     
+    console.warn('[100ms] virtual background not supported:', support?.errMsg);
     return;
   }
 
@@ -115,7 +123,7 @@ export async function applyVirtualBackground(options: {
       await hmsActions.addPluginToVideoTrack(virtualBackgroundPlugin, pluginFrameRate);
     }
   } catch (error) {
-    // eslint-disable-next-line no-console
+     
     console.error('[100ms] virtual background failure', error);
   }
 }
@@ -142,7 +150,7 @@ export async function joinMeetupRoom(params: {
       imageUrl: params.virtualBackgroundImageUrl,
     });
   } catch (error) {
-    // eslint-disable-next-line no-console
+     
     console.error('[100ms] join failed', error);
   }
 }
@@ -155,7 +163,7 @@ export async function leaveMeetupRoom(): Promise<void> {
   try {
     await hmsActions.leave();
   } catch (error) {
-    // eslint-disable-next-line no-console
+     
     console.error('[100ms] leave failed', error);
   }
 }
@@ -168,7 +176,7 @@ export async function sendPhotoSyncMessage(message: PhotoSyncMessage): Promise<v
   try {
     await hmsActions.sendBroadcastMessage(JSON.stringify(message), 'PHOTO_SYNC');
   } catch (error) {
-    // eslint-disable-next-line no-console
+     
     console.error('[100ms] sendBroadcastMessage failed', error);
   }
 }
@@ -181,12 +189,21 @@ export function subscribeToPhotoSync(
     return () => {};
   }
 
-  const unsubscribe = hmsNotifications.onNotification((notification: any) => {
+  const unsubscribe = hmsNotifications.onNotification((notification) => {
     if (notification?.type !== 'NEW_MESSAGE') {
       return;
     }
 
-    const rawMessage = notification?.data?.message;
+    // Safely access data.message by checking structure
+    const notificationData = notification as unknown as {
+      type?: string;
+      data?: {
+        message?: unknown;
+        [key: string]: unknown;
+      };
+    };
+
+    const rawMessage = notificationData?.data?.message;
     if (typeof rawMessage !== 'string') {
       return;
     }
@@ -247,7 +264,7 @@ export async function startPreview(params: { authToken: string; userName: string
       userName: params.userName,
     });
   } catch (error) {
-    // eslint-disable-next-line no-console
+     
     console.error('[100ms] preview failed', error);
     throw error;
   }
@@ -262,7 +279,7 @@ export async function stopPreview(): Promise<void> {
     // Use leave() to stop preview, as there's no explicit stopPreview method
     await hmsActions.leave();
   } catch (error) {
-    // eslint-disable-next-line no-console
+     
     console.error('[100ms] stop preview failed', error);
   }
 }
@@ -284,7 +301,7 @@ export async function attachPreviewVideo(
     try {
       // Try to get video track from local peer first (more reliable)
       const localPeer = hmsStore.getState(selectLocalPeer);
-      let videoTrack = localPeer?.videoTrack;
+      const videoTrack = localPeer?.videoTrack;
 
       // Fallback to track ID if peer object doesn't have track
       if (!videoTrack) {
@@ -297,7 +314,7 @@ export async function attachPreviewVideo(
           try {
             await videoElement.play();
           } catch (playError) {
-            // eslint-disable-next-line no-console
+             
             console.warn('[100ms] Video play failed, but track is attached:', playError);
           }
 
@@ -311,7 +328,7 @@ export async function attachPreviewVideo(
         try {
           await videoElement.play();
         } catch (playError) {
-          // eslint-disable-next-line no-console
+           
           console.warn('[100ms] Video play failed, but track is attached:', playError);
         }
 
@@ -323,7 +340,7 @@ export async function attachPreviewVideo(
         await new Promise((resolve) => setTimeout(resolve, 300));
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
+       
       console.error('[100ms] attach preview video failed (attempt ' + (i + 1) + '):', error);
       if (i === retries - 1) {
         throw error;
@@ -332,13 +349,13 @@ export async function attachPreviewVideo(
     }
   }
 
-  // eslint-disable-next-line no-console
+   
   console.warn('[100ms] Video track not available after', retries, 'attempts');
 }
 
 export async function setLocalVideoEnabled(enabled: boolean): Promise<void> {
   if (!hmsActions) {
-    // eslint-disable-next-line no-console
+     
     console.warn('[100ms] HMS actions not available');
     return;
   }
@@ -348,7 +365,7 @@ export async function setLocalVideoEnabled(enabled: boolean): Promise<void> {
     // eslint-disable-next-line no-console
     console.log('[100ms] Video enabled set to:', enabled);
   } catch (error) {
-    // eslint-disable-next-line no-console
+     
     console.error('[100ms] set local video enabled failed', error);
     throw error; // Re-throw to let caller handle it
   }
@@ -356,7 +373,7 @@ export async function setLocalVideoEnabled(enabled: boolean): Promise<void> {
 
 export async function setLocalAudioEnabled(enabled: boolean): Promise<void> {
   if (!hmsActions) {
-    // eslint-disable-next-line no-console
+     
     console.warn('[100ms] HMS actions not available');
     return;
   }
@@ -366,7 +383,7 @@ export async function setLocalAudioEnabled(enabled: boolean): Promise<void> {
     // eslint-disable-next-line no-console
     console.log('[100ms] Audio enabled set to:', enabled);
   } catch (error) {
-    // eslint-disable-next-line no-console
+     
     console.error('[100ms] set local audio enabled failed', error);
     throw error; // Re-throw to let caller handle it
   }
@@ -389,10 +406,10 @@ export async function applyVirtualBackgroundToPreview(options: {
       HMSVirtualBackgroundTypes.NONE,
     );
 
-    const support = virtualBackgroundPlugin.checkSupport();
-    if (!support || (support as any).errMsg) {
-      // eslint-disable-next-line no-console
-      console.warn('[100ms] virtual background not supported:', (support as any)?.errMsg);
+    const support = virtualBackgroundPlugin.checkSupport() as VirtualBackgroundSupport;
+    if (!support || support.errMsg) {
+       
+      console.warn('[100ms] virtual background not supported:', support?.errMsg);
       return;
     }
   }
@@ -416,7 +433,7 @@ export async function applyVirtualBackgroundToPreview(options: {
         HMSVirtualBackgroundTypes.NONE,
       );
     } catch (error) {
-      // eslint-disable-next-line no-console
+       
       console.error('[100ms] remove virtual background failed', error);
     }
 
@@ -456,7 +473,7 @@ export async function applyVirtualBackgroundToPreview(options: {
       await hmsActions.addPluginToVideoTrack(virtualBackgroundPlugin, pluginFrameRate);
     }
   } catch (error) {
-    // eslint-disable-next-line no-console
+     
     console.error('[100ms] virtual background failure', error);
   }
 }

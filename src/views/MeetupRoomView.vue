@@ -38,6 +38,7 @@
   let unsubscribePeers: (() => void) | null = null;
   let unsubscribeVideoState: (() => void) | null = null;
   let unsubscribeAudioState: (() => void) | null = null;
+  const isInitialized = ref(false);
 
   async function attachPeerVideo(peer: HMSPeer, videoElement: HTMLVideoElement) {
     const hmsActions = getHmsActions();
@@ -64,11 +65,9 @@
       try {
         await videoElement.play();
       } catch (playError) {
-        // eslint-disable-next-line no-console
         console.warn('[MeetupRoomView] Video play failed, but track is attached:', playError);
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error('[MeetupRoomView] Failed to attach video for peer:', peer.id, error);
     }
   }
@@ -84,7 +83,6 @@
       await hmsActions.detachVideo(peer.videoTrack, videoElement);
       videoElement.srcObject = null;
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error('[MeetupRoomView] Failed to detach video for peer:', peer.id, error);
     }
   }
@@ -92,6 +90,11 @@
   async function updateParticipants(peers: HMSPeer[]) {
     // Create a map of existing participants by peer ID to track changes
     const existingParticipantsMap = new Map(participants.value.map((p) => [p.peer.id, p]));
+
+    // Detect newly joined non-local peers so we can sync the current photo
+    const hasNewRemotePeers = peers.some(
+      (peer) => !peer.isLocal && !existingParticipantsMap.has(peer.id),
+    );
 
     // Sort peers by joinedAt if available (oldest first)
     const sortedPeers = [...peers].sort((a, b) => {
@@ -123,6 +126,12 @@
       };
     });
 
+    // If one or more remote peers have just joined, broadcast the currently
+    // selected photo so that new participants immediately see the same image.
+    if (hasNewRemotePeers) {
+      await syncCurrentPhotoForNewParticipants();
+    }
+
     participants.value = newParticipants;
 
     // Handle video track attachments/detachments
@@ -131,7 +140,7 @@
         // Check if video is already attached to avoid re-attaching
         const existingParticipant = existingParticipantsMap.get(peer.id);
         const trackChanged =
-          !existingParticipant || existingParticipant.peer.videoTrack?.id !== peer.videoTrack.id;
+          !existingParticipant || existingParticipant.peer.videoTrack !== peer.videoTrack;
 
         if (trackChanged || !videoElementRef.srcObject) {
           await attachPeerVideo(peer, videoElementRef);
@@ -143,16 +152,47 @@
     }
   }
 
+  async function syncCurrentPhotoForNewParticipants() {
+    // Only sync if we're fully initialized (session state loaded, photos loaded, etc.)
+    if (!isInitialized.value) {
+      return;
+    }
+
+    if (!store.photos.length) {
+      return;
+    }
+
+    const currentIndex = store.currentPhotoIndex;
+    // Ensure we have a valid index
+    if (currentIndex < 0 || currentIndex >= store.photos.length) {
+      return;
+    }
+
+    if (!store.currentUserId) {
+      return;
+    }
+
+    const currentPhoto = store.photos[currentIndex];
+
+    await sendPhotoSyncMessage({
+      type: 'navigate_photo',
+      photoId: currentPhoto?.id || '',
+      photoIndex: currentIndex,
+      navigatorId: store.currentUserId,
+      timestamp: Date.now(),
+    });
+  }
+
   function getPeerInitials(peer: HMSPeer): string {
     const name = (peer.name || '').trim();
 
     if (name) {
       const parts = name.split(/\s+/);
       if (parts.length === 1) {
-        return parts[0].charAt(0).toUpperCase();
+        return parts[0]?.charAt(0).toUpperCase() || '';
       }
 
-      return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+      return (parts[0]?.charAt(0) || '' + parts[1]?.charAt(0) || '')?.toUpperCase();
     }
 
     if (peer.isLocal && store.currentUserName) {
@@ -160,10 +200,10 @@
       if (currentName) {
         const parts = currentName.split(/\s+/);
         if (parts.length === 1) {
-          return parts[0].charAt(0).toUpperCase();
+          return parts[0]?.charAt(0).toUpperCase() || '';
         }
 
-        return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+        return (parts[0]?.charAt(0) || '' + parts[1]?.charAt(0) || '').toUpperCase();
       }
     }
 
@@ -303,6 +343,9 @@
         unsubscribePhotoSync = subscribeToPhotoSync((message) => {
           store.setCurrentPhotoIndex(message.photoIndex);
         });
+
+        // Mark as initialized after everything is set up
+        isInitialized.value = true;
       }
     } catch (error) {
       store.setError((error as Error).message || 'Something went wrong while loading the meetup.');
@@ -324,7 +367,7 @@
     if (store.currentUserId) {
       await sendPhotoSyncMessage({
         type: 'navigate_photo',
-        photoId: photo.id,
+        photoId: photo?.id || '',
         photoIndex: index,
         navigatorId: store.currentUserId,
         timestamp: Date.now(),
@@ -346,7 +389,7 @@
       await logPhotoEvent({
         meetupId: meetupId.value,
         sessionId: store.sessionId,
-        photoId: photo.id,
+        photoId: photo?.id || '',
         photoIndex: index,
         timestampMs,
         navigatorUserId: store.currentUserId,
@@ -396,7 +439,7 @@
     } catch (error) {
       // Revert optimistic update on error
       cameraOn.value = !cameraOn.value;
-      // eslint-disable-next-line no-console
+
       console.error('[MeetupRoomView] Failed to toggle camera:', error);
     }
   }
@@ -414,7 +457,7 @@
     } catch (error) {
       // Revert optimistic update on error
       micOn.value = !micOn.value;
-      // eslint-disable-next-line no-console
+
       console.error('[MeetupRoomView] Failed to toggle mic:', error);
     }
   }
@@ -439,14 +482,8 @@
 
   function handleChat() {
     // TODO: Implement chat functionality
-    // eslint-disable-next-line no-console
-    console.log('Chat clicked');
-  }
 
-  function handleScreenShare() {
-    // TODO: Implement screen share functionality
-    // eslint-disable-next-line no-console
-    console.log('Screen share clicked');
+    console.log('Chat clicked');
   }
 
   async function handleEndCall() {
@@ -496,7 +533,7 @@
       <div
         v-for="participant in participants"
         :key="participant.peer.id"
-        class="relative h-[80px] w-[120px] shrink-0 overflow-hidden rounded-lg border"
+        class="relative h-20 w-30 shrink-0 overflow-hidden rounded-lg border"
         :class="participant.peer.isLocal ? 'border-green-500' : 'border-slate-600'"
       >
         <div class="relative h-full w-full overflow-hidden bg-slate-800">
@@ -523,10 +560,10 @@
         <div
           class="absolute bottom-0.75 left-1 right-1 flex items-center justify-between text-[9px] text-slate-50"
         >
-          <span class="rounded-[3px] bg-black/70 px-[5px] py-[2px]">
+          <span class="rounded-[3px] bg-black/70 px-1.25 py-0.5">
             {{ participant.peer.isLocal ? 'You' : participant.peer.name || 'Participant' }}
           </span>
-          <span class="ml-1 rounded-[3px] bg-black/70 px-[4px] py-[2px] text-[10px]">
+          <span class="ml-1 rounded-[3px] bg-black/70 px-1 py-0.5 text-[10px]">
             <span
               :class="[
                 'fa-solid',
@@ -541,7 +578,7 @@
 
       <div
         v-if="participants.length === 0"
-        class="flex h-[80px] w-[120px] shrink-0 items-center justify-center rounded-lg border border-slate-600 bg-slate-800 p-2"
+        class="flex h-20 w-30 shrink-0 items-center justify-center rounded-lg border border-slate-600 bg-slate-800 p-2"
       >
         <span class="text-[10px] text-slate-400">waiting..</span>
       </div>
@@ -554,7 +591,7 @@
       <div class="relative flex h-full w-full items-center">
         <div
           v-if="!store.photos.length"
-          class="flex min-h-[400px] items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-center"
+          class="flex min-h-100 items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-center"
         >
           <div class="space-y-2">
             <p class="text-lg font-semibold text-slate-300">PHOTO DISPLAY</p>
@@ -578,8 +615,8 @@
           <div class="relative h-full w-full overflow-hidden bg-black">
             <img
               v-if="store.photos[store.currentPhotoIndex]"
-              :src="store.photos[store.currentPhotoIndex].url"
-              :alt="store.photos[store.currentPhotoIndex].title"
+              :src="store.photos[store.currentPhotoIndex]?.url"
+              :alt="store.photos[store.currentPhotoIndex]?.title"
               class="h-full w-full object-contain"
             />
             <div
@@ -610,7 +647,7 @@
         <button
           v-for="(photo, index) in store.photos"
           :key="photo.id"
-          class="flex h-[60px] w-[80px] shrink-0 items-center justify-center overflow-hidden rounded-lg border transition-colors"
+          class="flex h-15 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border transition-colors"
           :class="
             index === store.currentPhotoIndex
               ? 'border-green-500 bg-green-500/10'

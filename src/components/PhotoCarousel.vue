@@ -4,13 +4,13 @@
   import Image from 'primevue/image';
   import Button from 'primevue/button';
 
-  const props = defineProps<{
+  defineProps<{
     photos: Photo[];
     currentIndex: number;
   }>();
 
   const emit = defineEmits<{
-    (event: 'photoSelected', index: number): void;
+    (_event: 'photoSelected', _index: number): void;
   }>();
 
   function handleThumbnailClick(index: number) {
@@ -45,7 +45,7 @@
     <template #content>
       <div
         v-if="!photos.length"
-        class="flex min-h-[160px] items-center justify-center rounded-xl border border-dashed border-slate-700 bg-slate-900/80 px-4 text-sm text-slate-400"
+        class="flex min-h-40 items-center justify-center rounded-xl border border-dashed border-slate-700 bg-slate-900/80 px-4 text-sm text-slate-400"
       >
         No photos available for this meetup yet.
       </div>

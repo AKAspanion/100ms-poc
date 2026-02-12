@@ -42,7 +42,7 @@ app.use((req, res, next) => {
 
   res.on('finish', () => {
     const duration = Date.now() - start;
-    // eslint-disable-next-line no-console
+     
     console.log(
       JSON.stringify({
         level: 'info',
@@ -151,7 +151,7 @@ async function ensureHmsRoomForMeetup(meetup) {
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => '');
-    // eslint-disable-next-line no-console
+     
     console.error(
       JSON.stringify({
         level: 'error',
@@ -311,7 +311,7 @@ app.post('/meetups/:id/photo-events', (req, res) => {
 
   appendPhotoEventRecord(sessionId, event);
 
-  // eslint-disable-next-line no-console
+   
   console.log(
     JSON.stringify({
       level: 'info',
@@ -410,7 +410,7 @@ app.get('/', (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  // eslint-disable-next-line no-console
+   
   console.log(
     JSON.stringify({
       level: 'info',

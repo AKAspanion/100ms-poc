@@ -62,7 +62,7 @@
                 await attachPreviewVideo(videoElementRef.value!);
               } catch (error) {
                 // Track might not be ready yet, subscription to track ID will handle it
-                // eslint-disable-next-line no-console
+                 
                 console.warn('[PreJoinView] Failed to attach video after enabling:', error);
               }
             }, 300);
@@ -84,7 +84,7 @@
               try {
                 await attachPreviewVideo(videoElementRef.value);
               } catch (error) {
-                // eslint-disable-next-line no-console
+                 
                 console.error('[PreJoinView] Failed to attach video track:', error);
               }
             } else {
@@ -92,7 +92,7 @@
               videoElementRef.value.srcObject = null;
             }
           }
-        }, selectLocalVideoTrackID);
+        }, selectLocalVideoTrackID as any);
 
         previewUnsubscribers.value.push(unsubscribeTrack);
       }
@@ -135,7 +135,7 @@
           await attachPreviewVideo(videoElementRef.value);
         } catch (error) {
           // Track might not be ready yet, subscription will handle it
-          // eslint-disable-next-line no-console
+           
           console.warn(
             '[PreJoinView] Initial video attach failed, will retry via subscription:',
             error,
@@ -178,7 +178,7 @@
     try {
       await stopPreview();
     } catch (error) {
-      // eslint-disable-next-line no-console
+       
       console.error('[PreJoinView] Failed to stop preview', error);
     }
 
@@ -222,8 +222,8 @@
   }
 
   async function handleToggleCamera() {
+    const currentState = cameraOn.value;
     try {
-      const currentState = cameraOn.value;
       const nextState = !currentState;
 
       // Optimistically update UI and store preference for better UX
@@ -242,15 +242,15 @@
     } catch (error) {
       // Revert optimistic update on error
       cameraOn.value = currentState;
-      // eslint-disable-next-line no-console
+       
       console.error('[PreJoinView] Failed to toggle camera:', error);
       localErrorMessage.value = 'Failed to toggle camera. Please try again.';
     }
   }
 
   async function handleToggleMic() {
+    const currentState = micOn.value;
     try {
-      const currentState = micOn.value;
       const nextState = !currentState;
 
       // Optimistically update UI and store preference for better UX
@@ -264,7 +264,7 @@
     } catch (error) {
       // Revert optimistic update on error
       micOn.value = currentState;
-      // eslint-disable-next-line no-console
+       
       console.error('[PreJoinView] Failed to toggle mic:', error);
       localErrorMessage.value = 'Failed to toggle microphone. Please try again.';
     }
@@ -305,7 +305,7 @@
       try {
         await attachPreviewVideo(newVal);
       } catch (error) {
-        // eslint-disable-next-line no-console
+         
         console.warn('[PreJoinView] Failed to attach video on element mount:', error);
       }
     }

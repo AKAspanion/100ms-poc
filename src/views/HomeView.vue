@@ -80,8 +80,8 @@
             <Dropdown
               v-model="selectedUserId"
               :options="userOptions"
-              optionLabel="label"
-              optionValue="value"
+              option-label="label"
+              option-value="value"
               placeholder="Select a user"
               class="w-full"
             />
