@@ -6,7 +6,7 @@ const users = new Map([
     'demo-user-1',
     {
       id: 'demo-user-1',
-      name: 'you',
+      name: 'ankit',
       email: 'demo-user-1@memrico.local',
       type: 'host',
       // Simple role mapping per meetup – extend as needed.

@@ -48,10 +48,10 @@ export const useMeetupStore = defineStore('meetup', {
       }
 
       if (state.currentPhotoIndex < 0 || state.currentPhotoIndex >= state.photos.length) {
-        return state.photos[0]
+        return state.photos[0] || null
       }
 
-      return state.photos[state.currentPhotoIndex]
+      return state.photos[state.currentPhotoIndex]|| null
     },
   },
 

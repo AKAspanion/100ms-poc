@@ -79,22 +79,13 @@ async function handleJoinMeetup() {
         <div class="flex flex-col gap-3">
           <div class="flex flex-col gap-2">
             <label class="text-xs font-medium text-slate-300">Select User</label>
-            <Dropdown
-              v-model="selectedUserId"
-              :options="userOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Select a user"
-              class="w-full"
-            />
+            <Dropdown v-model="selectedUserId" :options="userOptions" optionLabel="label" optionValue="value"
+              placeholder="Select a user" class="w-full" />
           </div>
 
-          <form
-            class="flex flex-col gap-3 sm:flex-row"
-            @submit.prevent="handleJoinMeetup"
-          >
+          <form class="flex flex-col gap-3 sm:flex-row" @submit.prevent="handleJoinMeetup">
             <span class="p-input-icon-left w-full flex-1">
-              <i class="pi pi-users text-slate-400" />
+              <i class="fa-solid fa-users text-slate-400" />
               <InputText
                 v-model="meetupIdInput"
                 name="meetupId"
@@ -107,27 +98,21 @@ async function handleJoinMeetup() {
             <Button
               type="submit"
               label="Join Meetup"
-              icon="pi pi-video"
+              icon="fa-solid fa-video"
               class="w-full justify-center sm:w-auto"
               :loading="isJoining"
             />
           </form>
         </div>
 
-        <Message
-          v-if="joinErrorMessage"
-          severity="error"
-          class="mt-3 text-xs"
-        >
+        <Message v-if="joinErrorMessage" severity="error" class="mt-3 text-xs">
           {{ joinErrorMessage }}
         </Message>
 
         <p class="mt-4 text-xs text-slate-400">
-          This POC uses mocked APIs when no backend URL is configured, so you can run it locally
-          without extra setup.
+          This is a POC. It's not production ready.
         </p>
       </template>
     </Card>
   </div>
 </template>
-

@@ -13,8 +13,9 @@ import {
   getPhotoEventsForSession,
   getSessionById,
   upsertMeetup,
-} from './jsonDb.js'
-import { users, MOCK_MEETUP_ID } from './users.js'
+} from './lib/jsonDb.js'
+import { users, MOCK_MEETUP_ID } from './mock/users.js'
+import { getPhotosForAlbum, MOCK_ALBUM_ID } from './mock/photos.js'
 
 // Resolve __dirname in ESM so we can load server/.env
 const __filename = fileURLToPath(import.meta.url)
@@ -62,8 +63,6 @@ app.use((req, res, next) => {
 // In-memory demo data – replace with real persistence later.
 // ---------------------------------------------------------------------------
 
-const MOCK_ALBUM_ID = 'demo-album'
-
 function getOrCreateMeetup(meetupId) {
   const existing = getMeetupById(meetupId)
   if (existing) {
@@ -85,22 +84,6 @@ function getOrCreateMeetup(meetupId) {
   upsertMeetup(meetup)
   return meetup
 }
-
-function createMockPhotos(albumId) {
-  const baseAlbumId = albumId || MOCK_ALBUM_ID
-  return Array.from({ length: 12 }).map((_, index) => {
-    const photoIndex = index + 1
-    return {
-      id: `photo-${photoIndex}`,
-      albumId: baseAlbumId,
-      url: `https://images.pexels.com/photos/248797/pexels-photo-248797.jpeg?auto=compress&cs=tinysrgb&w=1200&q=80&random=${photoIndex}`,
-      thumbnailUrl: `https://images.pexels.com/photos/248797/pexels-photo-248797.jpeg?auto=compress&cs=tinysrgb&w=300&q=80&random=${photoIndex}`,
-      title: `Family memory #${photoIndex}`,
-      index: photoIndex - 1,
-    }
-  })
-}
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -284,7 +267,7 @@ app.get('/meetups/:id/auth-token', async (req, res) => {
 
 app.get('/albums/:id/photos', (req, res) => {
   const albumId = req.params.id || MOCK_ALBUM_ID
-  res.json(createMockPhotos(albumId))
+  res.json(getPhotosForAlbum(albumId))
 })
 
 app.post('/meetups/:id/session', (req, res) => {

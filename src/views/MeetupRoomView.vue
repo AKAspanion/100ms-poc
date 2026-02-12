@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Message from 'primevue/message'
+import Button from 'primevue/button'
 import { useMeetupStore } from '../stores/meetupStore'
 import { logPhotoEvent } from '../api/client'
 import {
@@ -18,6 +19,7 @@ import {
   selectPeers,
   selectIsLocalVideoEnabled,
   selectIsLocalAudioEnabled,
+  selectTrackByID,
 } from '@100mslive/hms-video-store'
 import type { HMSPeer } from '@100mslive/hms-video-store'
 
@@ -57,7 +59,7 @@ async function attachPeerVideo(peer: HMSPeer, videoElement: HTMLVideoElement) {
     // Attach video track. Use the track object directly, which
     // mirrors the working preview implementation and 100ms examples.
     await hmsActions.attachVideo(peer.videoTrack, videoElement)
-    
+
     // Ensure video plays after attachment
     try {
       await videoElement.play()
@@ -93,8 +95,29 @@ async function updateParticipants(peers: HMSPeer[]) {
     participants.value.map((p) => [p.peer.id, p]),
   )
 
-  // Update participants list
-  const newParticipants = peers.map((peer) => {
+  // Sort peers by joinedAt if available (oldest first)
+  const sortedPeers = [...peers].sort((a, b) => {
+    const aJoined: any = (a as any).joinedAt
+    const bJoined: any = (b as any).joinedAt
+
+    if (!aJoined && !bJoined) {
+      return 0
+    }
+    if (!aJoined) {
+      return 1
+    }
+    if (!bJoined) {
+      return -1
+    }
+
+    const aTime = typeof aJoined === 'number' ? aJoined : new Date(aJoined).getTime()
+    const bTime = typeof bJoined === 'number' ? bJoined : new Date(bJoined).getTime()
+
+    return aTime - bTime
+  })
+
+  // Update participants list in sorted order
+  const newParticipants = sortedPeers.map((peer) => {
     const existing = existingParticipantsMap.get(peer.id)
     return {
       peer,
@@ -110,7 +133,7 @@ async function updateParticipants(peers: HMSPeer[]) {
       // Check if video is already attached to avoid re-attaching
       const existingParticipant = existingParticipantsMap.get(peer.id)
       const trackChanged = !existingParticipant || existingParticipant.peer.videoTrack?.id !== peer.videoTrack.id
-      
+
       if (trackChanged || !videoElementRef.srcObject) {
         await attachPeerVideo(peer, videoElementRef)
       }
@@ -119,6 +142,90 @@ async function updateParticipants(peers: HMSPeer[]) {
       videoElementRef.srcObject = null
     }
   }
+}
+
+function getPeerInitials(peer: HMSPeer): string {
+  const name = (peer.name || '').trim()
+
+  if (name) {
+    const parts = name.split(/\s+/)
+    if (parts.length === 1) {
+      return parts[0].charAt(0).toUpperCase()
+    }
+
+    return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase()
+  }
+
+  if (peer.isLocal && store.currentUserName) {
+    const currentName = store.currentUserName.trim()
+    if (currentName) {
+      const parts = currentName.split(/\s+/)
+      if (parts.length === 1) {
+        return parts[0].charAt(0).toUpperCase()
+      }
+
+      return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase()
+    }
+  }
+
+  return peer.isLocal ? 'Y' : 'P'
+}
+
+function isPeerMicOn(peer: HMSPeer): boolean {
+  // Local peer uses reactive micOn state
+  if (peer.isLocal) {
+    return micOn.value
+  }
+
+  const hmsStore = getHmsStore()
+  if (!hmsStore) {
+    return Boolean((peer as any).audioTrack)
+  }
+
+  const trackId = (peer as any).audioTrack as string | undefined
+  if (!trackId) {
+    return false
+  }
+
+  const track: any = hmsStore.getState(selectTrackByID(trackId))
+  if (!track) {
+    return false
+  }
+
+  // Prefer explicit enabled flag if present, otherwise fall back to presence
+  if (typeof track.enabled === 'boolean') {
+    return track.enabled
+  }
+
+  return true
+}
+
+function isPeerVideoOn(peer: HMSPeer): boolean {
+  // Local peer uses reactive cameraOn state
+  if (peer.isLocal) {
+    return cameraOn.value
+  }
+
+  const hmsStore = getHmsStore()
+  if (!hmsStore) {
+    return Boolean((peer as any).videoTrack)
+  }
+
+  const trackId = (peer as any).videoTrack as string | undefined
+  if (!trackId) {
+    return false
+  }
+
+  const track: any = hmsStore.getState(selectTrackByID(trackId))
+  if (!track) {
+    return false
+  }
+
+  if (typeof track.enabled === 'boolean') {
+    return track.enabled
+  }
+
+  return true
 }
 
 function setupPeerSubscriptions() {
@@ -277,7 +384,7 @@ watch(
 function setVideoElementRef(peerId: string, element: HTMLVideoElement | null) {
   if (element) {
     videoElementRefs.value.set(peerId, element)
-    
+
     // Find the peer and attach video if track is available
     const participant = participants.value.find((p) => p.peer.id === peerId)
     if (participant && participant.peer.videoTrack) {
@@ -292,10 +399,10 @@ async function handleToggleCamera() {
   try {
     const currentState = cameraOn.value
     const nextState = !currentState
-    
+
     // Optimistically update UI for better UX
     cameraOn.value = nextState
-    
+
     // Call HMS action to toggle video
     await setLocalVideoEnabled(nextState)
   } catch (error) {
@@ -310,10 +417,10 @@ async function handleToggleMic() {
   try {
     const currentState = micOn.value
     const nextState = !currentState
-    
+
     // Optimistically update UI for better UX
     micOn.value = nextState
-    
+
     // Call HMS action to toggle audio
     await setLocalAudioEnabled(nextState)
   } catch (error) {
@@ -328,8 +435,8 @@ function handlePreviousPhoto() {
   if (!store.photos.length) {
     return
   }
-  const newIndex = store.currentPhotoIndex > 0 
-    ? store.currentPhotoIndex - 1 
+  const newIndex = store.currentPhotoIndex > 0
+    ? store.currentPhotoIndex - 1
     : store.photos.length - 1
   handlePhotoSelected(newIndex)
 }
@@ -338,8 +445,8 @@ function handleNextPhoto() {
   if (!store.photos.length) {
     return
   }
-  const newIndex = store.currentPhotoIndex < store.photos.length - 1 
-    ? store.currentPhotoIndex + 1 
+  const newIndex = store.currentPhotoIndex < store.photos.length - 1
+    ? store.currentPhotoIndex + 1
     : 0
   handlePhotoSelected(newIndex)
 }
@@ -397,84 +504,78 @@ onUnmounted(async () => {
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col bg-slate-950">
+  <div class="flex h-screen flex-col bg-slate-950 overflow-hidden">
     <!-- Top Section: Participants -->
     <div class="flex gap-2 overflow-x-auto border-b border-slate-800 bg-slate-900 px-3 py-3">
       <div
         v-for="participant in participants"
         :key="participant.peer.id"
-        class="relative h-[60px] w-[80px] shrink-0 overflow-hidden rounded-lg border"
+        class="relative h-[80px] w-[120px] shrink-0 overflow-hidden rounded-lg border"
         :class="participant.peer.isLocal ? 'border-green-500' : 'border-slate-600'"
       >
-        <div class="relative h-[60px] w-[80px] overflow-hidden bg-slate-800">
-          <video
-            :ref="(el) => setVideoElementRef(participant.peer.id, el as HTMLVideoElement)"
-            autoplay
-            playsinline
-            muted
-            class="h-full w-full object-cover"
-          />
+        <div class="relative h-full w-full overflow-hidden bg-slate-800">
+          <video :ref="(el) => setVideoElementRef(participant.peer.id, el as HTMLVideoElement)" autoplay playsinline
+            muted class="h-full w-full object-cover" />
 
-          <div
-            v-if="!participant.peer.videoTrack"
-            class="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-slate-800 text-slate-300"
-          >
-            <span class="pi pi-desktop text-xs" />
+          <div v-if="!isPeerVideoOn(participant.peer)"
+            class="absolute inset-0 flex items-center justify-center bg-slate-800 text-slate-200">
+            <div
+              class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-400 bg-slate-900/80 text-xs font-semibold">
+              {{ getPeerInitials(participant.peer) }}
+            </div>
           </div>
         </div>
 
-        <span
-          class="absolute bottom-[3px] left-1 bg-black/70 px-[5px] py-[2px] rounded-[3px] text-[9px] text-slate-50"
-        >
-          {{ participant.peer.isLocal ? 'You' : (participant.peer.name || 'Participant') }}
-        </span>
+        <div class="absolute bottom-0.75 left-1 right-1 flex items-center justify-between text-[9px] text-slate-50">
+          <span class="rounded-[3px] bg-black/70 px-[5px] py-[2px]">
+            {{ participant.peer.isLocal ? 'You' : (participant.peer.name || 'Participant') }}
+          </span>
+          <span class="ml-1 rounded-[3px] bg-black/70 px-[4px] py-[2px] text-[10px]">
+            <span :class="[
+              'fa-solid',
+              isPeerMicOn(participant.peer)
+                ? 'fa-microphone text-green-400'
+                : 'fa-microphone-slash text-slate-400',
+            ]" />
+          </span>
+        </div>
       </div>
 
       <div
         v-if="participants.length === 0"
-        class="flex h-[60px] w-[80px] shrink-0 items-center justify-center rounded-lg border border-slate-600 bg-slate-800 p-2"
+        class="flex h-[80px] w-[120px] shrink-0 items-center justify-center rounded-lg border border-slate-600 bg-slate-800 p-2"
       >
-        <span class="text-[10px] text-slate-400">No participants yet</span>
+        <span class="text-[10px] text-slate-400">waiting..</span>
       </div>
     </div>
 
     <!-- Middle Section: Photo Display -->
-    <div class="relative flex flex-1 flex-col items-center justify-center bg-slate-950 px-4 py-6">
-      <div class="relative w-full max-w-2xl">
-        <div
-          v-if="!store.photos.length"
-          class="flex min-h-[400px] items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-center"
-        >
+    <div
+      class="relative flex flex-1 flex-col items-center justify-center bg-slate-950 px-4 py-4 overflow-y-auto">
+      <div class="relative flex h-full w-full items-center">
+        <div v-if="!store.photos.length"
+          class="flex min-h-[400px] items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-center">
           <div class="space-y-2">
             <p class="text-lg font-semibold text-slate-300">PHOTO DISPLAY</p>
             <p class="text-sm text-slate-400">No photos available</p>
           </div>
         </div>
 
-        <div
-          v-else
-          class="relative overflow-hidden rounded-lg border border-slate-700 bg-slate-900"
-        >
+        <div v-else class="relative h-full w-full overflow-hidden rounded-lg border border-slate-700 bg-slate-900">
           <!-- Previous Button -->
           <button
             class="absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-slate-800/90 text-white shadow-lg transition-colors hover:bg-slate-700"
             @click="handlePreviousPhoto"
           >
-            <span class="pi pi-chevron-left text-sm" />
+            <span class="fa-solid fa-chevron-left text-sm" />
           </button>
 
           <!-- Photo Display -->
-          <div class="relative aspect-[4/3] w-full overflow-hidden bg-black">
-            <img
-              v-if="store.photos[store.currentPhotoIndex]"
-              :src="store.photos[store.currentPhotoIndex].url"
-              :alt="store.photos[store.currentPhotoIndex].title"
-              class="h-full w-full object-contain"
-            />
-            <div
-              v-else
-              class="flex h-full w-full flex-col items-center justify-center gap-2 bg-slate-900 text-slate-300"
-            >
+          <div class="relative h-full w-full overflow-hidden bg-black">
+            <img v-if="store.photos[store.currentPhotoIndex]" :src="store.photos[store.currentPhotoIndex].url"
+              :alt="store.photos[store.currentPhotoIndex].title" class="h-full w-full object-contain" />
+            <div v-else
+              class="flex h-full w-full flex-col items-center justify-center gap-2 bg-slate-900 text-slate-300">
               <p class="text-lg font-semibold">PHOTO DISPLAY</p>
               <p class="text-sm">{{ store.currentMeetup?.title || 'Family Reunion 2024' }}</p>
               <p class="text-xs text-slate-400">Swipe or tap arrows</p>
@@ -486,7 +587,7 @@ onUnmounted(async () => {
             class="absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-slate-800/90 text-white shadow-lg transition-colors hover:bg-slate-700"
             @click="handleNextPhoto"
           >
-            <span class="pi pi-chevron-right text-sm" />
+            <span class="fa-solid fa-chevron-right text-sm" />
           </button>
         </div>
       </div>
@@ -494,83 +595,68 @@ onUnmounted(async () => {
 
     <!-- Bottom Section: Pagination and Actions -->
     <div class="border-t border-slate-800 bg-slate-900 px-4 py-4">
-      <!-- Pagination Buttons -->
-      <div
-        v-if="store.photos.length > 0"
-        class="mb-4 flex gap-2 overflow-x-auto pb-1"
-      >
+      <!-- Pagination Thumbnails -->
+      <div v-if="store.photos.length > 0" class="mb-4 flex gap-2 overflow-x-auto pb-1">
         <button
           v-for="(photo, index) in store.photos"
           :key="photo.id"
-          class="flex h-8 min-w-[40px] shrink-0 items-center justify-center rounded-lg border text-sm font-medium transition-colors"
-          :class="
-            index === store.currentPhotoIndex
-              ? 'border-green-500 bg-green-500/10 text-green-400'
-              : 'border-slate-600 bg-slate-800 text-slate-300 hover:border-slate-500'
+          class="flex h-[60px] w-[80px] shrink-0 items-center justify-center overflow-hidden rounded-lg border transition-colors"
+          :class="index === store.currentPhotoIndex
+            ? 'border-green-500 bg-green-500/10'
+            : 'border-slate-600 bg-slate-800 hover:border-slate-500'
           "
           @click="handlePhotoSelected(index)"
         >
-          {{ index + 1 }}
+          <img
+            v-if="photo.url"
+            :src="photo.url"
+            :alt="photo.title || 'Photo ' + (index + 1)"
+            class="h-full w-full object-cover"
+          />
+          <span v-else class="text-xs text-slate-300">
+            {{ index + 1 }}
+          </span>
         </button>
       </div>
 
       <!-- Action Buttons -->
       <div class="flex items-center justify-center gap-4">
         <!-- Chat Button -->
-        <button
-          class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700"
+        <Button
+          icon="fa-solid fa-comments"
+          class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700 p-0!"
           @click="handleChat"
-        >
-          <span class="pi pi-comments text-lg" />
-        </button>
+        />
 
         <!-- Microphone Button -->
-        <button
-          class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700"
-          :class="micOn ? 'bg-green-500/20 text-green-400' : ''"
+        <Button
+          :icon="micOn ? 'fa-solid fa-microphone' : 'fa-solid fa-microphone-slash'"
+          :severity="micOn ? 'success' : 'secondary'"
+          class="flex h-12 w-12 items-center justify-center rounded-full p-0!"
           @click="handleToggleMic"
-        >
-          <span
-            :class="[
-              'text-lg',
-              micOn ? 'pi pi-microphone' : 'pi pi-volume-off',
-            ]"
-          />
-        </button>
+        />
 
         <!-- Camera Button -->
-        <button
-          class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700"
-          :class="cameraOn ? 'bg-green-500/20 text-green-400' : ''"
+        <Button
+          :icon="cameraOn ? 'fa-solid fa-video' : 'fa-solid fa-video-slash'"
+          :severity="cameraOn ? 'success' : 'secondary'"
+          class="flex h-12 w-12 items-center justify-center rounded-full p-0!"
           @click="handleToggleCamera"
-        >
-          <span
-            :class="[
-              'text-lg',
-              cameraOn ? 'pi pi-video' : 'pi pi-eye-slash',
-            ]"
-          />
-        </button>
+        />
 
         <!-- End Call Button -->
-        <button
-          class="flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white transition-colors hover:bg-red-700"
+        <Button
+          icon="fa-solid fa-xmark"
+          severity="danger"
+          class="flex h-12 w-12 items-center justify-center rounded-full p-0!"
           @click="handleEndCall"
-        >
-          <span class="pi pi-times text-lg" />
-        </button>
+        />
       </div>
     </div>
 
     <!-- Error Message -->
-    <Message
-      v-if="store.errorMessage"
-      severity="error"
-      class="mx-4 mb-4 text-xs"
-    >
+    <Message v-if="store.errorMessage" severity="error" class="mx-4 mb-4 text-xs">
       {{ store.errorMessage }}
     </Message>
   </div>
 </template>
-
-
