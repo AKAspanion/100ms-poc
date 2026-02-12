@@ -9,14 +9,12 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/meetups/:meetupId',
     name: 'meetup',
-    component: () => import('./views/PreJoinView.vue'),
+    component: () => import('./views/MeetupView.vue'),
     props: true,
   },
   {
     path: '/meetups/:meetupId/room',
-    name: 'meetup-room',
-    component: () => import('./views/MeetupRoomView.vue'),
-    props: true,
+    redirect: (to) => ({ name: 'meetup', params: to.params }),
   },
 ];
 
