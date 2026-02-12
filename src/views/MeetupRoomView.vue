@@ -38,6 +38,8 @@
   let unsubscribePeers: (() => void) | null = null;
   let unsubscribeVideoState: (() => void) | null = null;
   let unsubscribeAudioState: (() => void) | null = null;
+  const trackUnsubscribers = ref<Map<string, () => void>>(new Map());
+  const trackUpdateTrigger = ref(0); // Used to force reactivity updates
   const isInitialized = ref(false);
 
   async function attachPeerVideo(peer: HMSPeer, videoElement: HTMLVideoElement) {
@@ -96,6 +98,14 @@
       (peer) => !peer.isLocal && !existingParticipantsMap.has(peer.id),
     );
 
+    // Unsubscribe from tracks of peers that have left
+    const currentPeerIds = new Set(peers.map((p) => p.id));
+    for (const existingPeerId of existingParticipantsMap.keys()) {
+      if (!currentPeerIds.has(existingPeerId)) {
+        unsubscribeFromPeerTracks(existingPeerId);
+      }
+    }
+
     // Sort peers by joinedAt if available (oldest first)
     const sortedPeers = [...peers].sort((a, b) => {
       const aJoined = (a as { joinedAt?: number | string }).joinedAt;
@@ -133,6 +143,11 @@
     }
 
     participants.value = newParticipants;
+
+    // Subscribe to track changes for all peers
+    for (const { peer } of newParticipants) {
+      subscribeToPeerTracks(peer);
+    }
 
     // Handle video track attachments/detachments
     for (const { peer, videoElementRef } of newParticipants) {
@@ -227,6 +242,9 @@
       return false;
     }
 
+    // Access trackUpdateTrigger to ensure reactivity
+    void trackUpdateTrigger.value;
+
     const track = hmsStore.getState(selectTrackByID(trackId));
     if (!track) {
       return false;
@@ -257,6 +275,9 @@
       return false;
     }
 
+    // Access trackUpdateTrigger to ensure reactivity
+    void trackUpdateTrigger.value;
+
     const track = hmsStore.getState(selectTrackByID(trackId));
     if (!track) {
       return false;
@@ -267,6 +288,63 @@
     }
 
     return true;
+  }
+
+  function subscribeToPeerTracks(peer: HMSPeer) {
+    const hmsStore = getHmsStore();
+    if (!hmsStore || peer.isLocal) {
+      return;
+    }
+
+    // Subscribe to audio track changes
+    const audioTrackId = (peer as { audioTrack?: string }).audioTrack;
+    if (audioTrackId) {
+      // Unsubscribe from previous track if it exists
+      const existingUnsubscribe = trackUnsubscribers.value.get(`audio-${peer.id}`);
+      if (existingUnsubscribe) {
+        existingUnsubscribe();
+      }
+
+      // Subscribe to track changes
+      const unsubscribe = hmsStore.subscribe((_track) => {
+        // Trigger reactivity update when track enabled state changes
+        trackUpdateTrigger.value++;
+      }, selectTrackByID(audioTrackId));
+
+      trackUnsubscribers.value.set(`audio-${peer.id}`, unsubscribe);
+    }
+
+    // Subscribe to video track changes
+    const videoTrackId = (peer as { videoTrack?: string }).videoTrack;
+    if (videoTrackId) {
+      // Unsubscribe from previous track if it exists
+      const existingUnsubscribe = trackUnsubscribers.value.get(`video-${peer.id}`);
+      if (existingUnsubscribe) {
+        existingUnsubscribe();
+      }
+
+      // Subscribe to track changes
+      const unsubscribe = hmsStore.subscribe((_track) => {
+        // Trigger reactivity update when track enabled state changes
+        trackUpdateTrigger.value++;
+      }, selectTrackByID(videoTrackId));
+
+      trackUnsubscribers.value.set(`video-${peer.id}`, unsubscribe);
+    }
+  }
+
+  function unsubscribeFromPeerTracks(peerId: string) {
+    const audioUnsubscribe = trackUnsubscribers.value.get(`audio-${peerId}`);
+    if (audioUnsubscribe) {
+      audioUnsubscribe();
+      trackUnsubscribers.value.delete(`audio-${peerId}`);
+    }
+
+    const videoUnsubscribe = trackUnsubscribers.value.get(`video-${peerId}`);
+    if (videoUnsubscribe) {
+      videoUnsubscribe();
+      trackUnsubscribers.value.delete(`video-${peerId}`);
+    }
   }
 
   function setupPeerSubscriptions() {
@@ -512,6 +590,12 @@
       unsubscribeAudioState();
     }
 
+    // Clean up all track subscriptions
+    for (const unsubscribe of trackUnsubscribers.value.values()) {
+      unsubscribe();
+    }
+    trackUnsubscribers.value.clear();
+
     // Detach all video tracks
     for (const { peer, videoElementRef } of participants.value) {
       if (videoElementRef && peer.videoTrack) {
@@ -588,7 +672,7 @@
 
     <!-- Middle Section: Photo Display -->
     <div
-      class="relative flex flex-1 flex-col items-center justify-center bg-slate-950 px-4 py-4 overflow-y-auto"
+      class="relative w-full flex flex-1 flex-col items-center justify-center bg-slate-950 px-4 py-4 overflow-y-auto"
     >
       <div class="relative flex h-full w-full items-center">
         <div
