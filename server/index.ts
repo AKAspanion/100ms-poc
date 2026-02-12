@@ -412,7 +412,7 @@ app.get('/photos/:id/meetup-clips', (req: Request, res: Response) => {
 });
 
 app.get('/', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', message: 'Memrico Meetups demo API' });
+  res.json({ status: 'ok', message: '100ms Meetups demo API' });
 });
 
 app.listen(PORT, () => {
@@ -420,7 +420,7 @@ app.listen(PORT, () => {
     JSON.stringify({
       level: 'info',
       ts: new Date().toISOString(),
-      msg: `Memrico demo API listening on http://localhost:${PORT}`,
+      msg: `100ms Meetups demo API listening on http://localhost:${PORT}`,
       port: PORT,
     }),
   );

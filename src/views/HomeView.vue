@@ -69,7 +69,7 @@
 
       <template #subtitle>
         <span class="mt-1 text-sm text-slate-300">
-          Enter a Meetup ID from Memrico, or use the demo meetup to explore the experience.
+          Enter a Meetup ID, or use the demo meetup to explore the experience.
         </span>
       </template>
 
