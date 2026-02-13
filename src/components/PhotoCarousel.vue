@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { ref } from 'vue';
   import type { Photo } from '../api/types';
   import Card from 'primevue/card';
   import Image from 'primevue/image';
@@ -13,8 +14,22 @@
     (_event: 'photoSelected', _index: number): void;
   }>();
 
+  const thumbnailListRef = ref<HTMLElement | null>(null);
+
   function handleThumbnailClick(index: number) {
     emit('photoSelected', index);
+    scrollSelectedToStart(index);
+  }
+
+  function scrollSelectedToStart(index: number) {
+    const container = thumbnailListRef.value;
+    if (!container) return;
+    const thumb = container.querySelector(`[data-thumb-index="${index}"]`) as HTMLElement | null;
+    if (!thumb) return;
+    const containerRect = container.getBoundingClientRect();
+    const thumbRect = thumb.getBoundingClientRect();
+    const scrollDelta = thumbRect.left - containerRect.left;
+    container.scrollBy({ left: scrollDelta, behavior: 'smooth' });
   }
 </script>
 
@@ -72,26 +87,31 @@
           </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <div ref="thumbnailListRef" class="overflow-x-auto">
           <div class="flex gap-2 pb-1">
-            <Button
+            <div
               v-for="(photo, index) in photos"
               :key="photo.id"
-              type="button"
-              class="group relative inline-flex shrink-0 rounded-xl border bg-surface-0/80 p-0"
-              :class="[
-                index === currentIndex
-                  ? 'border-primary ring-2 ring-primary/70'
-                  : 'border-surface hover:border-surface',
-              ]"
-              @click="handleThumbnailClick(index)"
+              :data-thumb-index="index"
+              class="shrink-0"
             >
-              <img
-                :src="photo.thumbnailUrl"
-                :alt="photo.title"
-                class="h-16 w-20 rounded-[10px] object-cover sm:h-18 sm:w-24"
-              />
-            </Button>
+              <Button
+                type="button"
+                class="group relative inline-flex rounded-xl border bg-surface-0/80 p-0"
+                :class="[
+                  index === currentIndex
+                    ? 'border-primary ring-2 ring-primary/70'
+                    : 'border-surface hover:border-surface',
+                ]"
+                @click="handleThumbnailClick(index)"
+              >
+                <img
+                  :src="photo.thumbnailUrl"
+                  :alt="photo.title"
+                  class="h-16 w-20 rounded-[10px] object-cover sm:h-18 sm:w-24"
+                />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
