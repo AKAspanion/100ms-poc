@@ -16,12 +16,7 @@ import {
 } from './lib/jsonDb.js';
 import { users, MOCK_MEETUP_ID } from './mock/users.js';
 import { getPhotosForAlbum, MOCK_ALBUM_ID } from './mock/photos.js';
-import type {
-  Meetup,
-  PhotoEventRequestBody,
-  HmsRoomResponse,
-  HmsTokenPayload,
-} from './types.js';
+import type { Meetup, PhotoEventRequestBody, HmsRoomResponse, HmsTokenPayload } from './types.js';
 
 // Resolve __dirname in ESM so we can load server/.env
 const __filename = fileURLToPath(import.meta.url);
@@ -224,7 +219,8 @@ app.post('/meetups/:id/schedule', async (req: Request, res: Response) => {
       video_room_id: videoRoomId,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to schedule meetup and create room';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Failed to schedule meetup and create room';
     res.status(500).json({
       error: errorMessage,
     });

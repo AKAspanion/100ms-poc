@@ -62,7 +62,7 @@
                 await attachPreviewVideo(videoElementRef.value!);
               } catch (error) {
                 // Track might not be ready yet, subscription to track ID will handle it
-                 
+
                 console.warn('[PreJoinView] Failed to attach video after enabling:', error);
               }
             }, 300);
@@ -87,7 +87,6 @@
               try {
                 await attachPreviewVideo(videoElementRef.value);
               } catch (error) {
-                 
                 console.error('[PreJoinView] Failed to attach video track:', error);
               }
             } else {
@@ -138,7 +137,7 @@
           await attachPreviewVideo(videoElementRef.value);
         } catch (error) {
           // Track might not be ready yet, subscription will handle it
-           
+
           console.warn(
             '[PreJoinView] Initial video attach failed, will retry via subscription:',
             error,
@@ -181,7 +180,6 @@
     try {
       await stopPreview();
     } catch (error) {
-       
       console.error('[PreJoinView] Failed to stop preview', error);
     }
 
@@ -245,7 +243,7 @@
     } catch (error) {
       // Revert optimistic update on error
       cameraOn.value = currentState;
-       
+
       console.error('[PreJoinView] Failed to toggle camera:', error);
       localErrorMessage.value = 'Failed to toggle camera. Please try again.';
     }
@@ -267,7 +265,7 @@
     } catch (error) {
       // Revert optimistic update on error
       micOn.value = currentState;
-       
+
       console.error('[PreJoinView] Failed to toggle mic:', error);
       localErrorMessage.value = 'Failed to toggle microphone. Please try again.';
     }
@@ -308,7 +306,6 @@
       try {
         await attachPreviewVideo(newVal);
       } catch (error) {
-         
         console.warn('[PreJoinView] Failed to attach video on element mount:', error);
       }
     }
@@ -373,7 +370,7 @@
             >
               <div class="flex items-center gap-3">
                 <Button
-                rounded
+                  rounded
                   :icon="cameraOn ? 'fa-solid fa-video' : 'fa-solid fa-video-slash'"
                   :severity="cameraOn ? 'success' : 'secondary'"
                   class="flex h-10 w-10 items-center justify-center rounded-full p-0!"
@@ -381,7 +378,7 @@
                   @click="handleToggleCamera"
                 />
                 <Button
-                rounded
+                  rounded
                   :icon="micOn ? 'fa-solid fa-microphone' : 'fa-solid fa-microphone-slash'"
                   :severity="micOn ? 'success' : 'secondary'"
                   class="flex h-10 w-10 items-center justify-center rounded-full p-0!"
@@ -392,7 +389,7 @@
               <div class="flex flex-1 flex-col gap-1 sm:items-end">
                 <div class="flex w-full gap-2 sm:justify-end">
                   <Button
-                  rounded
+                    rounded
                     label="None"
                     size="small"
                     :severity="store.virtualBackgroundMode === 'none' ? 'success' : 'secondary'"
@@ -400,7 +397,7 @@
                     @click="handleVirtualBackgroundChange('none')"
                   />
                   <Button
-                  rounded
+                    rounded
                     label="Blur"
                     size="small"
                     :severity="store.virtualBackgroundMode === 'blur' ? 'success' : 'secondary'"
@@ -408,7 +405,7 @@
                     @click="handleVirtualBackgroundChange('blur')"
                   />
                   <Button
-                  rounded
+                    rounded
                     label="Custom"
                     size="small"
                     :severity="store.virtualBackgroundMode === 'image' ? 'success' : 'secondary'"
@@ -430,7 +427,7 @@
             </div>
 
             <Button
-            rounded
+              rounded
               label="Join"
               icon="fa-solid fa-right-to-bracket"
               class="w-full justify-center"

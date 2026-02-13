@@ -117,7 +117,10 @@ export const useMeetupStore = defineStore('meetup', {
         this.photos = await getAlbumPhotos(this.currentMeetup.albumId);
         // Only reset to 0 if we don't have a valid index set yet
         // (session state might have already set it to the correct value)
-        if (this.photos.length && (this.currentPhotoIndex < 0 || this.currentPhotoIndex >= this.photos.length)) {
+        if (
+          this.photos.length &&
+          (this.currentPhotoIndex < 0 || this.currentPhotoIndex >= this.photos.length)
+        ) {
           this.currentPhotoIndex = 0;
         }
       } catch (error) {

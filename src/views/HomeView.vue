@@ -100,7 +100,7 @@
             </span>
 
             <Button
-            rounded
+              rounded
               type="submit"
               label="Join Meetup"
               icon="fa-solid fa-video"

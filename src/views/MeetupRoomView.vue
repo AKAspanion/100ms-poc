@@ -898,7 +898,7 @@
 
         <!-- Microphone Button -->
         <Button
-        rounded
+          rounded
           :icon="micOn ? 'fa-solid fa-microphone' : 'fa-solid fa-microphone-slash'"
           :severity="micOn ? 'success' : 'secondary'"
           class="flex h-12 w-12 items-center justify-center rounded-full p-0!"
@@ -907,7 +907,7 @@
 
         <!-- Camera Button -->
         <Button
-        rounded
+          rounded
           :icon="cameraOn ? 'fa-solid fa-video' : 'fa-solid fa-video-slash'"
           :severity="cameraOn ? 'success' : 'secondary'"
           class="flex h-12 w-12 items-center justify-center rounded-full p-0!"
@@ -916,7 +916,7 @@
 
         <!-- End Call Button -->
         <Button
-        rounded
+          rounded
           icon="fa-solid fa-xmark"
           severity="danger"
           class="flex h-12 w-12 items-center justify-center rounded-full p-0!"
