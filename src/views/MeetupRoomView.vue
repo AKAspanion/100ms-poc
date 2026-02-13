@@ -5,6 +5,8 @@
   import Button from 'primevue/button';
   import { useMeetupStore } from '../stores/meetupStore';
   import { logPhotoEvent } from '../api/client';
+  import ChatComponent from '../components/ChatComponent.vue';
+  import PhotoCarousel from '../components/PhotoCarousel.vue';
   import {
     joinMeetupRoom,
     leaveMeetupRoom,
@@ -35,6 +37,7 @@
   const videoElementRefs = ref<Map<string, HTMLVideoElement>>(new Map());
   const cameraOn = ref(true);
   const micOn = ref(true);
+  const isChatOpen = ref(false);
 
   let unsubscribePhotoSync: (() => void) | null = null;
   let unsubscribePeers: (() => void) | null = null;
@@ -665,28 +668,12 @@
     }
   }
 
-  function handlePreviousPhoto() {
-    if (!store.photos.length) {
-      return;
-    }
-    const newIndex =
-      store.currentPhotoIndex > 0 ? store.currentPhotoIndex - 1 : store.photos.length - 1;
-    handlePhotoSelected(newIndex);
-  }
-
-  function handleNextPhoto() {
-    if (!store.photos.length) {
-      return;
-    }
-    const newIndex =
-      store.currentPhotoIndex < store.photos.length - 1 ? store.currentPhotoIndex + 1 : 0;
-    handlePhotoSelected(newIndex);
-  }
-
   function handleChat() {
-    // TODO: Implement chat functionality
+    isChatOpen.value = !isChatOpen.value;
+  }
 
-    console.log('Chat clicked');
+  function handleCloseChat() {
+    isChatOpen.value = false;
   }
 
   async function handleEndCall() {
@@ -753,7 +740,7 @@
         v-for="participant in participants"
         :key="participant.peer.id"
         class="relative h-20 w-30 shrink-0 overflow-hidden rounded-lg border"
-        :class="participant.peer.isLocal ? 'border-highlight' : 'border-surface-50'"
+        :class="participant.peer.isLocal ? 'border-primary' : 'border-surface-50'"
       >
         <div class="relative h-full w-full overflow-hidden bg-surface-100">
           <video
@@ -803,89 +790,16 @@
       </div>
     </div>
 
-    <!-- Middle Section: Photo Display -->
-    <div
-      class="relative w-full flex flex-1 flex-col items-center justify-center bg-surface-0 px-4 py-4 overflow-y-auto"
-    >
-      <div class="relative flex h-full w-full items-center">
-        <div
-          v-if="!store.photos.length"
-          class="flex h-full w-full min-h-100 items-center justify-center rounded-lg border border-surface-50 bg-surface-50 text-center"
-        >
-          <div class="space-y-2">
-            <p class="text-lg font-semibold text-color">PHOTO DISPLAY</p>
-            <p class="text-sm text-muted-color">No photos available</p>
-          </div>
-        </div>
+    <!-- Middle Section: Photo Display + Pagination Thumbnails -->
+    <PhotoCarousel
+      :photos="store.photos"
+      :current-index="store.currentPhotoIndex"
+      :meetup-title="store.currentMeetup?.title"
+      @photo-selected="handlePhotoSelected"
+    />
 
-        <div
-          v-else
-          class="relative h-full w-full overflow-hidden rounded-lg border border-surface-50 bg-surface-50"
-        >
-          <!-- Previous Button -->
-          <button
-            class="absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface-0 text-color shadow-lg transition-colors hover:bg-surface-50"
-            @click="handlePreviousPhoto"
-          >
-            <span class="fa-solid fa-chevron-left text-sm" />
-          </button>
-
-          <!-- Photo Display -->
-          <div class="relative h-full w-full overflow-hidden bg-surface-50">
-            <img
-              v-if="store.photos[store.currentPhotoIndex]"
-              :src="store.photos[store.currentPhotoIndex]?.url"
-              :alt="store.photos[store.currentPhotoIndex]?.title"
-              class="h-full w-full object-contain"
-            />
-            <div
-              v-else
-              class="flex h-full w-full flex-col items-center justify-center gap-2 bg-surface-50 text-color"
-            >
-              <p class="text-lg font-semibold">PHOTO DISPLAY</p>
-              <p class="text-sm">{{ store.currentMeetup?.title || 'Family Reunion 2024' }}</p>
-              <p class="text-xs text-muted-color">Swipe or tap arrows</p>
-            </div>
-          </div>
-
-          <!-- Next Button -->
-          <button
-            class="absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface-0 text-color shadow-lg transition-colors hover:bg-surface-50"
-            @click="handleNextPhoto"
-          >
-            <span class="fa-solid fa-chevron-right text-sm" />
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom Section: Pagination and Actions -->
-    <div class="border-t border-surface-50 bg-surface-50 px-4 py-4">
-      <!-- Pagination Thumbnails -->
-      <div v-if="store.photos.length > 0" class="mb-4 flex gap-2 overflow-x-auto pb-1">
-        <button
-          v-for="(photo, index) in store.photos"
-          :key="photo.id"
-          class="flex h-15 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border transition-colors"
-          :class="
-            index === store.currentPhotoIndex
-              ? 'border-highlight bg-highlight'
-              : 'border-surface-50 bg-surface-100 hover:border-highlight'
-          "
-          @click="handlePhotoSelected(index)"
-        >
-          <img
-            v-if="photo.url"
-            :src="photo.url"
-            :alt="photo.title || 'Photo ' + (index + 1)"
-            class="h-full w-full object-cover"
-          />
-          <span v-else class="text-xs text-color">
-            {{ index + 1 }}
-          </span>
-        </button>
-      </div>
-
+    <!-- Bottom Section: Actions -->
+    <div class="border-t border-surface-50 bg-surface-50 px-4 pb-4">
       <!-- Action Buttons -->
       <div class="flex items-center justify-between gap-4">
         <!-- Chat Button -->
@@ -929,5 +843,8 @@
     <Message v-if="store.errorMessage" severity="error" class="mx-4 mb-4 text-xs">
       {{ store.errorMessage }}
     </Message>
+
+    <!-- Chat Component -->
+    <ChatComponent :is-open="isChatOpen" @close="handleCloseChat" />
   </div>
 </template>

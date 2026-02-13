@@ -1,13 +1,11 @@
 <script setup lang="ts">
   import { ref } from 'vue';
   import type { Photo } from '../api/types';
-  import Card from 'primevue/card';
-  import Image from 'primevue/image';
-  import Button from 'primevue/button';
 
-  defineProps<{
+  const props = defineProps<{
     photos: Photo[];
     currentIndex: number;
+    meetupTitle?: string;
   }>();
 
   const emit = defineEmits<{
@@ -16,105 +14,130 @@
 
   const thumbnailListRef = ref<HTMLElement | null>(null);
 
-  function handleThumbnailClick(index: number) {
-    emit('photoSelected', index);
-    scrollSelectedToStart(index);
-  }
-
-  function scrollSelectedToStart(index: number) {
+  function scrollSelectedToCenter(index: number) {
     const container = thumbnailListRef.value;
     if (!container) return;
     const thumb = container.querySelector(`[data-thumb-index="${index}"]`) as HTMLElement | null;
     if (!thumb) return;
     const containerRect = container.getBoundingClientRect();
     const thumbRect = thumb.getBoundingClientRect();
-    const scrollDelta = thumbRect.left - containerRect.left;
+    const thumbCenter = thumbRect.left + thumbRect.width / 2;
+    const containerCenter = containerRect.left + containerRect.width / 2;
+    const scrollDelta = thumbCenter - containerCenter;
     container.scrollBy({ left: scrollDelta, behavior: 'smooth' });
+  }
+
+  function handleThumbnailClick(index: number) {
+    emit('photoSelected', index);
+    scrollSelectedToCenter(index);
+  }
+
+  function handlePreviousPhoto() {
+    if (!props.photos.length) return;
+    const newIndex = props.currentIndex > 0 ? props.currentIndex - 1 : props.photos.length - 1;
+    emit('photoSelected', newIndex);
+    scrollSelectedToCenter(newIndex);
+  }
+
+  function handleNextPhoto() {
+    if (!props.photos.length) return;
+    const newIndex = props.currentIndex < props.photos.length - 1 ? props.currentIndex + 1 : 0;
+    emit('photoSelected', newIndex);
+    scrollSelectedToCenter(newIndex);
   }
 </script>
 
 <template>
-  <Card class="mt-4 rounded-2xl!">
-    <template #title>
-      <div class="flex items-baseline justify-between gap-3">
-        <div>
-          <h2 class="text-sm font-semibold sm:text-base">Shared photo album</h2>
-          <p class="text-xs text-muted-color sm:text-[13px]">
-            Everyone in the meetup stays in sync as photos change.
-          </p>
+  <div class="flex min-h-0 flex-1 flex-col">
+    <!-- Middle Section: Photo Display -->
+    <div
+      class="relative w-full flex flex-1 flex-col items-center justify-center overflow-y-auto bg-surface-0 px-4 py-4"
+    >
+      <div class="relative flex h-full w-full items-center">
+        <div
+          v-if="!photos.length"
+          class="flex min-h-100 h-full w-full items-center justify-center rounded-lg border border-surface-50 bg-surface-50 text-center"
+        >
+          <div class="space-y-2">
+            <p class="text-lg font-semibold text-color">PHOTO DISPLAY</p>
+            <p class="text-sm text-muted-color">No photos available</p>
+          </div>
         </div>
 
-        <p v-if="photos.length" class="text-xs text-muted-color">
-          Photo
-          <span class="font-medium text-color">
-            {{ currentIndex + 1 }}
-          </span>
-          of
-          <span class="font-medium text-color">
-            {{ photos.length }}
-          </span>
-        </p>
-      </div>
-    </template>
-
-    <template #content>
-      <div
-        v-if="!photos.length"
-        class="flex min-h-40 items-center justify-center rounded-xl border border-dashed border-surface bg-surface-50/80 px-4 text-sm text-muted-color"
-      >
-        No photos available for this meetup yet.
-      </div>
-
-      <div v-else class="space-y-4">
-        <div class="overflow-hidden rounded-xl border border-surface bg-surface-0/70">
-          <Image
-            :src="photos[currentIndex]?.url"
-            :alt="photos[currentIndex]?.title"
-            image-class="h-64 w-full object-cover sm:h-80"
-            preview
-          />
-          <div
-            class="flex items-center justify-between border-t border-surface bg-surface-0/80 px-3 py-2"
+        <div
+          v-else
+          class="relative h-full w-full overflow-hidden rounded-lg border border-surface-50 bg-surface-50"
+        >
+          <!-- Previous Button -->
+          <button
+            type="button"
+            class="absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface-0 text-color shadow-lg transition-colors hover:bg-surface-100"
+            @click="handlePreviousPhoto"
           >
-            <div>
-              <p class="text-xs font-medium text-color sm:text-sm">
-                {{ photos[currentIndex]?.title || 'Untitled photo' }}
-              </p>
-              <p class="text-[11px] text-muted-color sm:text-xs">
-                Click a thumbnail below to change the shared photo for everyone.
-              </p>
-            </div>
-          </div>
-        </div>
+            <span class="fa-solid fa-chevron-left text-sm" />
+          </button>
 
-        <div ref="thumbnailListRef" class="overflow-x-auto">
-          <div class="flex gap-2 pb-1">
+          <!-- Photo Display -->
+          <div class="relative h-full w-full overflow-hidden bg-surface-50">
+            <img
+              v-if="photos[currentIndex]"
+              :src="photos[currentIndex]?.url"
+              :alt="photos[currentIndex]?.title"
+              class="h-full w-full object-contain"
+            />
             <div
-              v-for="(photo, index) in photos"
-              :key="photo.id"
-              :data-thumb-index="index"
-              class="shrink-0"
+              v-else
+              class="flex h-full w-full flex-col items-center justify-center gap-2 bg-surface-50 text-color"
             >
-              <Button
-                type="button"
-                class="group relative inline-flex rounded-xl border bg-surface-0/80 p-0"
-                :class="[
-                  index === currentIndex
-                    ? 'border-primary ring-2 ring-primary/70'
-                    : 'border-surface hover:border-surface',
-                ]"
-                @click="handleThumbnailClick(index)"
-              >
-                <img
-                  :src="photo.thumbnailUrl"
-                  :alt="photo.title"
-                  class="h-16 w-20 rounded-[10px] object-cover sm:h-18 sm:w-24"
-                />
-              </Button>
+              <p class="text-lg font-semibold">PHOTO DISPLAY</p>
+              <p class="text-sm">{{ meetupTitle || 'Family Reunion 2024' }}</p>
+              <p class="text-xs text-muted-color">Swipe or tap arrows</p>
             </div>
           </div>
+
+          <!-- Next Button -->
+          <button
+            type="button"
+            class="absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface-0 text-color shadow-lg transition-colors hover:bg-surface-100"
+            @click="handleNextPhoto"
+          >
+            <span class="fa-solid fa-chevron-right text-sm" />
+          </button>
         </div>
       </div>
-    </template>
-  </Card>
+    </div>
+
+    <!-- Pagination Thumbnails -->
+    <div v-if="photos.length > 0" class="border-t border-surface-50 bg-surface-50 px-4 py-4">
+      <div ref="thumbnailListRef" class="mb-4 flex gap-2 overflow-x-auto pb-1">
+        <div
+          v-for="(photo, index) in photos"
+          :key="photo.id"
+          :data-thumb-index="index"
+          class="shrink-0"
+        >
+          <button
+            type="button"
+            class="flex h-15 w-20 items-center justify-center overflow-hidden rounded-lg border transition-colors"
+            :class="
+              index === currentIndex
+                ? 'border-primary bg-highlight'
+                : 'border-surface-50 bg-surface-100 hover:border-primary-500'
+            "
+            @click="handleThumbnailClick(index)"
+          >
+            <img
+              v-if="photo.url"
+              :src="photo.url"
+              :alt="photo.title || 'Photo ' + (index + 1)"
+              class="h-full w-full object-cover"
+            />
+            <span v-else class="text-xs text-color">
+              {{ index + 1 }}
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
