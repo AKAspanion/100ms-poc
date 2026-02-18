@@ -1,0 +1,21 @@
+name: Always Fail Workflow
+
+on:
+  push:
+    branches: [ '*' ]
+  pull_request:
+    branches: [ '*' ]
+  workflow_dispatch:
+
+jobs:
+  always-fail:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Always Fail Test
+        run: |
+          echo "This workflow is designed to always fail for testing purposes"
+          echo "❌ Test FAILED (intentional failure)"
+          exit 1
