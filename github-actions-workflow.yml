@@ -1,0 +1,10 @@
+name: Build
+on: [push]
+jobs: { jobs: ['Build'], steps: [steps.markdown('## Step 1: Setup workspace
+', '```yaml
+name: Setup Workspace
+uses: github actions/setup-node@v2
+with:
+  node-version: 20
+workingDirectory: /path/to/your/project
+``')], shell: 'cmd /c (node --version && npx prettier --check .)'}
