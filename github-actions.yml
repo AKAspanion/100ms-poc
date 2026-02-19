@@ -1,0 +1,15 @@
+name: Build and deploy
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set working directory
+        run: |
+            cd /home/runner/work/100ms-poc/100ms-poc
+      - name: Install dependencies
+        run: yarn install
+      - name: Build and run app
+        run: yarn build
