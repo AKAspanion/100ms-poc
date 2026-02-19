@@ -13,4 +13,9 @@ app.use(router);
 app.use(PrimeVue, { ripple: true });
 app.mount('#app');
 
+// Minimal fix to declare 'value' as a function or import it from somewhere
+function value(message: string) {
+  console.log(message);
+}
+
 value('hello');
