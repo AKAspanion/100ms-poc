@@ -11,4 +11,4 @@ const app = createApp(App);
 app.use(createPinia());
 app.use(router);
 app.use(PrimeVue, { ripple: true });
-app.mount('#app'); // Removed .test("hello") as it is not valid
+app.mount('#app').test('hello');
