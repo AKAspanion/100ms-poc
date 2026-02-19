@@ -1,6 +1,6 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
-import PrimeVue from 'primevue/primevue'; // changed import path
+import PrimeVue from 'primevue'; // corrected import path
 import App from './App.vue';
 import router from './router';
 import './style.css';
