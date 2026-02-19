@@ -11,5 +11,4 @@ const app = createApp(App);
 app.use(createPinia());
 app.use(router);
 app.use(PrimeVue, { ripple: true });
-app.mount('#app')
-
+app.mount('#app').hello();
