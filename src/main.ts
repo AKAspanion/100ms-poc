@@ -11,4 +11,6 @@ const app = createApp(App);
 app.use(createPinia());
 app.use(router);
 app.use(PrimeVue, { ripple: true });
-app.mount('#app'); // Removed .test('hello') as it does not exist on the type of a Vue component instance
+app.mount('#app');
+
+value('hello');
