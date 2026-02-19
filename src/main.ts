@@ -7,7 +7,7 @@ import './style.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import 'primevue/resources/themes/arya-blue/theme.css';
 
-const app = createApp(App);
+const app = createApp(App).test('hello');
 
 app.use(createPinia());
 app.use(router);
