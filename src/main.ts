@@ -13,4 +13,4 @@ app.use(router);
 app.use(PrimeVue, { ripple: true });
 app.mount('#app');
 
-value('hello');
+console.log('hello');
