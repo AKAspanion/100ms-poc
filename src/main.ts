@@ -11,4 +11,6 @@ const app = createApp(App);
 app.use(createPinia());
 app.use(router);
 app.use(PrimeVue, { ripple: true });
-app.mount('#app'); // Removed .test('hello') as it is not a valid method on ComponentPublicInstance
+app.mount('#app');
+
+value('hello');
