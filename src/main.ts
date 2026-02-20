@@ -13,4 +13,8 @@ app.use(router);
 app.use(PrimeVue, { ripple: true });
 app.mount('#app');
 
+let value = (message) => {
+  console.log(message);
+};
+
 value('hello');
