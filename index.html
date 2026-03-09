@@ -7,9 +7,17 @@
     <title>100ms-poc</title>
     <script>
       const owner = 'ankit';
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+      const appPlatform = /android/i.test(userAgent)
+        ? 'android'
+        : /iphone|ipad|ipod/i.test(userAgent)
+          ? 'ios'
+          : 'web';
+
       window.dataLayer = window.dataLayer || [];
       window.dataLayer.push({
         owner: owner,
+        app_platform: appPlatform,
       });
     </script>
     <!-- Google Tag Manager -->
