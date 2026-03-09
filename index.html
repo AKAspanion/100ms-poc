@@ -5,7 +5,13 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>100ms-poc</title>
-    <!-- Google Tag Manager -->
+    <script>
+      const owner = 'ankit';
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        owner: owner,
+      });
+    </script>
     <!-- Google Tag Manager -->
     <script>
       (function (w, d, s, l, i) {
@@ -19,7 +25,6 @@
         f.parentNode.insertBefore(j, f);
       })(window, document, 'script', 'dataLayer', 'GTM-5QZKVLNB');
     </script>
-    <!-- End Google Tag Manager -->
     <!-- End Google Tag Manager -->
   </head>
   <body>
@@ -35,12 +40,5 @@
     <!-- End Google Tag Manager (noscript) -->
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
-    <script>
-      const owner = 'ankit';
-      window.dataLayer = window.dataLayer || [];
-      window.dataLayer.push({
-        owner: owner,
-      });
-    </script>
   </body>
 </html>
