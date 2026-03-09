@@ -21,7 +21,7 @@ interface MeetupState {
   virtualBackgroundMode: 'none' | 'blur' | 'image';
   virtualBackgroundImageUrl: string | null;
   preferredCameraOn: boolean;
-  preferredMicOn: string;
+  preferredMicOn: boolean;
 }
 
 export const useMeetupStore = defineStore('meetup', {
